@@ -1,0 +1,41 @@
+{% extends "baseAjax.html" %}
+
+{% block scripts %}
+{% endblock %}
+
+{% block title %}
+    AlmostSignificant
+{% endblock %}
+
+{% block version %}
+    v{{ v }}
+{% endblock %}
+
+{% block detailsTitle %}
+	{{ detailsName }}
+{% endblock %}
+
+{% block detailsStats %}
+{% endblock %}
+
+{% block docreadyscripts %}
+{% endblock %}
+
+{% block other-content %}
+    <div id="content-table">
+    <h1>Note for {{ runName }}</h1>
+    {% if newNote %}
+        <p style="color:red">Note Updated</p>
+    {% endif %}
+    {% if error %}
+        <p style="color:red">Something went wrong</p>
+    {% endif %}
+    <form action="" method="get">
+        <textarea rows="4" cols="50" name="newNote">{{ runNotes }}</textarea>
+            </br><input type="submit" value="Submit">
+        </form>
+    </div>
+{% endblock %}
+
+{% block filters %}
+{% endblock %}

@@ -1,0 +1,80 @@
+/* general settings */
+
+/* LINKS */
+
+a:link, a:visited {
+    color: black;
+    text-decoration: underline;
+}
+
+a:hover {
+    color: #4F5BA4
+}
+
+a img {
+    border: none;
+}
+
+a.section:link, a.section:visited {
+    color: white;
+    text-decoration: none;
+}
+
+/* PAGE STRUCTURE */
+
+html {
+	height:100%;
+	padding:0;
+	margin:0;
+	min-height:100%;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-size: 12px;
+	font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+	height:100%;
+	min-height:100%;
+	height:auto;
+}
+
+#shrinkwrap {
+	background: #fff;
+    min-height: 100%;
+    min-width: 100%;
+    position: absolute;
+}	
+
+#container {
+	height:100%;
+	min-width: 750px;
+	min-height: 500px;
+	padding: 0;
+	background: #fff;
+}
+
+.histbar {
+	fill: steelblue;
+	stroke: black;
+    border: black;
+}
+		
+.axis path, .axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+div.tooltip {   
+  position: absolute;           
+  text-align: center;           
+  width: 60px;                  
+  height: 28px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: lightsteelblue;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}

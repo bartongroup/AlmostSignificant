@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 http://www.w3.org/TR/xhtml1/DTD/xhtml1-scrict-dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<!-- make sure the page conforms to xhtml -->
+<head>
+
+	{% load static from staticfiles %}
+    <title>
+        {% block title %}{% endblock %}
+    </title>
+    <!-- CSS -->
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/datatable.css"
+    />
+
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/datatable_jui.css"
+    />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/jquery-ui-1.10.3.custom.css"
+    />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/dataDB_main.css"
+    />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/dataDB_main_header.css"
+    />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/dataDB_main_details.css"
+    />
+	<link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/dataDB_main_footer.css"
+    />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/dataDB_main_tabs.css"
+    />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ STATIC_URL }}almostSignificant/css/dataDB_main_table.css"
+    />
+
+    <!-- page-specific style settings -->
+    <style>
+    {% block style %}{% endblock %}
+    </style>
+
+    <!-- datatable javascript -->
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/jquery-1.9.1.min.js"
+    >
+    </script>
+
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/jquery-migrate-1.2.1.js"
+    >
+    </script>
+
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/barchart.js"
+    >
+    </script>
+
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/jquery.dataTables.js"
+    >
+    </script>
+
+    <!-- JQuery plugins -->
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/jQueryRotate.js"
+    >
+    </script>
+                         
+
+    <!-- d3 -->
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/d3.v3.js"
+    >
+    </script>
+
+    <!-- JQuery-ui scripts -->
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/jquery-ui-1.10.3.custom.js"
+    >
+    </script>
+
+    <!-- Standard page javascript functions -->
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/almostSignificant_base.js"
+    >
+    </script>
+
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/dataDB_login.js"
+    >
+    </script>
+
+    <script type="text/javascript"
+            language="javasript"
+            src="{{ STATIC_URL }}almostSignificant/js/dataDB_logos.js"
+    >
+    </script>
+
+    <!-- page-speciic in-line javascript -->
+    {% block scripts %}{% endblock %}
+
+    <!-- doc-ready script for populating datatables -->
+    <!-- exact contents always page specific -->
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            {% block docreadyscripts %}{% endblock %}
+            $(function() {
+                
+                $( "#tabs" ).tabs();
+                if($("#content-filter").height < $("#container").height()){
+                    $("#content-filter").height($("#container").height());
+                }
+    
+                var token = '{{ crsf_token }}';
+
+                loadLoginScripts(token);
+                loadLogoScripts("{{ STATIC_URL }}almostSignificant/#4F5BA4");
+            });
+        });
+    </script>
+
+	<link rel="shortcut icon" href="/media/favicon.ico" />
+
+</head>
+
+ 
+<body>
+    <div id="shrinkwrap">
+        <div id="header">
+            <div id="branding"> 
+                <!-- <a href="http://gsu.lifesci.dundee.ac.uk/" target="_blank"><span id="GSUlogo" class="mainlogo" title="Visit the Genomic Sequencing Unit"></span></a> -->
+                <p id="site-name">{% block headtitle %}AlmostSignificant{% endblock %}</p>
+            </div>
+            <div id="user-tools">
+                {% block authoptions %}
+                    {% if user.is_authenticated %}
+                        Welcome {{ user.first_name }}: 
+                        <span id="logouttext" class="trigger">Log out</span>
+                    {% else %}
+                        <span id="logintext" class="trigger">Log in</span>
+                        <div id="loginpopup" class="loginpopup">
+                            <p id="loginhead">AlmostSignificant login:</p>
+                            <p id="loginerror">Sorry, that's not a valid username or password</p>
+                            <p id="loginbody">Please enter your username and password below and click 'OK' to log in. Click 'cancel' to close this window.</p>
+                            
+                            <form action='' method='post'>
+                                {% csrf_token %}
+                                <div id="login-username">
+                                    <label for="username">User name:</label>
+                                    <input type="text" name="username" value="" id="username"> <br>
+                                </div>
+                                <div id="login-password">
+                                    <label for="password">Password:</label>
+                                    <input type="password" name="password" value="" id="password"> <br>
+                                </div>
+                                <div id="login-button">
+                                    <center>
+                                    <input id="login" type="button" value="login"/>
+                                    <input id="cancellogin" type="button" value="cancel"/>
+                                    </center>                               
+                                </div>
+                            </form>                          
+                        </div>
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </div> 
+		<div id="details">
+			<div id="navLinks">
+				<ul>
+                <li><a href="{% url 'run' %}" id="navLink">Run Overview</a></li>
+                <li><a href="{% url 'project' %}" id="navLink">Project Overview</a></li>
+                <li><a href="{% url 'stats' %}" id="navLink">Statistics Overview</a></li>
+				</ul>
+			</div>
+			<div id="titleBlock">
+				<p id="detailTitle">{% block detailsTitle %}{% endblock %}</p>
+					{% block detailsStats %}
+					{% endblock %}
+			</div>
+		</div>
+
+        <div id="container">
+            <!--<div id="content-filter">       
+                    {% block filters %}{% endblock %}
+            </div> -->   
+            <div id="content-other">                
+                {% block pre-content-info %}{% endblock %}
+                {% block other-content %}{% endblock %}
+            </div>
+        </div>
+        <div id="footer">
+            <div id="credits">
+                Written by <a id="footer-emaillinks" 
+                href="mailto:jxward@dundee.ac.uk" title="e-mail me"> Joseph Ward</a> with thanks for help from Nick Schurch.
+                &copy
+                <a id="footer-emaillinks" href="http://gsu.lifesci.dundee.ac.uk/" title="Visit the Genomic Sequecing Unit" target="_blank">Genomic Sequencing Unit</a>, 
+                <a id="footer-emaillinks" href="http://www.compbio.dundee.ac.uk/" title="Visit the Barton Group" target="_blank">Barton Group</a>, 
+                <a id="footer-emaillinks" href="http://www.lifesci.dundee.ac.uk/" title="Visit the College of Life Sciences" target="_blank">College of Life Sciences</a> 
+            </div>
+            <div id="mainlogos">
+                <a href="http://gsu.lifesci.dundee.ac.uk/" target="_blank"><span id="GSUlogo" class="mainlogo" title="Visit the Genomic Sequencing Unit"></span></a>
+                <a href="http://www.dundee.ac.uk/" target="_blank"><span id="UODlogo" class="mainlogo" title="Visit the University of Dundee"></span></a>
+            </div>
+            <div id="date">
+                {% now "jS F Y" %}
+            </div>
+        </div> 
+    </div>
+</body>
+
+</html>

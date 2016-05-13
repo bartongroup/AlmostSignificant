@@ -1,0 +1,148 @@
+/* almostSignificant page header CSS */
+
+#header {
+	background-color: #86E065;
+	background-size: 50% 50%;
+	background-image: url(images/ui-bg_highlight-soft_75_86E065_500x100.png);
+	background-position: top;
+	background-repeat:repeat-x;
+	color: #222222;
+	overflow: hidden;
+/*	border-bottom: 1px solid #4a4a4a;*/
+	height: 30px;
+	min-width: 750px;
+	padding-bottom: 1px;
+	padding-top: 14px;
+}
+
+#header a:hover {
+    color: #FFFFFF;
+}
+
+#branding {
+	float:left;
+	overflow:hidden;
+	lesine-height: 50px;
+	height: 100%;
+	width: 25%;
+}
+
+#site-name {
+	padding: 0px 5px 0px 15px;
+	font-size: 18px;
+	font-weight: bold;
+	color: #000000;
+	display: inline-block;
+	margin: 0px;
+}
+
+
+#versionstring {
+	padding: 0em 0.1em;
+	font-size: 9px;
+	font-weight: normal;
+	color: #4a4a4a;
+	display: inline-block;
+	margin: 0px;
+}
+
+#user-tools {
+	float: right;
+	padding: 0px 15px;
+	font-size: 11px;
+	text-align: right;
+	margin: 0px;
+	line-height: 50px;
+	height: 100%;
+}
+
+#breadcrumbs {
+	position: relative;
+	left: 15px;
+	padding: 1.2em 5px;
+	font-size: 11px;
+	text-align: left;
+}
+
+#logintext {
+    color: #4a4a4a;
+    text-decoration: underline;
+	cursor: pointer;
+	height:30px;
+}
+
+#docstext {
+    color: #4a4a4a;
+    text-decoration: underline;
+	cursor: pointer;
+}
+
+#logouttext {
+    color: #4a4a4a;
+    text-decoration: underline;
+	cursor: pointer;
+}
+
+
+
+/* login floating div settings */
+
+div.loginpopup {
+  display: none;
+  position: absolute;
+  width: 280px;
+  padding: 10px;
+  background-color: #efefef;
+  border: 1px solid #4a4a4a;
+  z-index: 1500;
+  box-shadow: 10px 10px 5px #888888;
+  text-align: left;
+  line-height: normal;
+}
+
+#loginhead {
+	font-size: 18px;
+	font-weight: bold;
+	color: #4a4a4a;
+	display: inline-block;
+	margin: 0px;
+}
+
+#loginbody {
+	padding-top:5px;
+	font-weight: normal;
+	margin: 0px;
+}
+
+#loginerror {
+	padding-top:10px;
+	padding-bottom:5px;
+	display: none;
+	font-weight: bold;
+	margin: 0px;
+	color: #FF0000;
+}
+
+#login-username {
+	overflow: hidden;
+	position: relative;
+	width:200px;
+	float: left;
+	padding: 5px;
+}
+
+#login-password {
+	overflow: hidden;
+	position: relative;
+	width:200px;
+	float: left;
+	padding: 5px;
+}
+
+#login-button {
+	overflow: hidden;
+	position: relative;
+	width:200px;
+	float: left;
+	padding: 5px;
+}

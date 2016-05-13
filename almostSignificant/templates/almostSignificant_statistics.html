@@ -1,0 +1,34 @@
+{% extends "baseAjax.html" %}
+
+{% block scripts %}
+{% endblock %}
+
+{% block title %}
+    AlmostSignificant
+{% endblock %}
+
+{% block version %}
+    v{{ v }}
+{% endblock %}
+
+{% block detailsTitle %}
+	{{ detailsName }}
+{% endblock %}
+
+{% block detailsStats %}
+	<p id="statDetail">Flow Cells: {{ runs }}</p>	
+{% endblock %}
+
+{% block docreadyscripts %}
+    loadStatisticsTable("dataset_table");
+{% endblock %}
+
+{% block other-content %}
+    <div id="content-table">
+        <table cellpadding="5px" cellspacing="0" border="0" id="dataset_table" class="display">
+        </table>
+    </div>
+{% endblock %}
+
+{% block filters %}
+{% endblock %}

@@ -1,0 +1,95 @@
+
+#takes input as a JSON string as described in the example below below.
+#Outer contents pertain to the run in general
+#has sample value which is an array of samples, each a dict of information pertaining
+#to the individual samples, rather than the run
+
+# at the start of the line indicates that this can be gathered in dataloading.py
+{
+#   "runName":"130531_SN7001389_0053_AC2410ACXX",
+   "runLocation":"/cluster/gsu/data/hiseq/130531_SN7001398_0053_AC2410ACXX",
+#   "project":"Project_GSU_AG_Worm",
+#   "totalSequences":1895437,
+   "filteredSequences":0,
+#   "undeterminedIndex":[
+#      {
+#         "index":"TGAC",
+#         "occurances":7,
+#         "lane":1
+#      },
+#      {
+#         "index":"GATK",
+#         "occurances":8,
+#         "lane":2
+#      }
+   ],
+#   "sample":[
+#      {
+#         "sampleName":"1",
+#         "lane":1,
+#         "Q30Length":89,
+#         "libraryID":"55",
+#         "software":[
+#            {
+#               "softwareName":"CASAVA",
+#               "version":"1.8.1",
+#               "parameters":"--explode FALSE"
+#            },
+#            {
+#               "softwareName":"OtherSoftware",
+#               "version":"1",
+#               "parameters":"doesnt exist"
+#            }
+         ],
+         "contaminantsImage":"/cluster/gsu/data/processed/Stats/Run/130531_SN7001398_0053_AC2410ACXX/Project_GSU_AG_Worm/Sample_3_LIB55_LDI19/3_LIB55_LDI19_CGATGT_L008_R1_001.fastq.gz_screen.png",
+#         "md5Hash":"asdhfsahdfljshdfljshdf",
+         "fastQCSummary":"/cluster/gsu/data/processed/Stats/Run/130531_SN7001398_0053_AC2410ACXX/Project_GSU_AG_Worm/Sample_3_LIB55_LDI19/3_LIB55_LDI19_CGATGT_L008_R1_001.pdf",
+#         "percentGC":45,
+#         "sequenceLength":"20-100",
+#         "sequenceQuality":"Pass",
+#         "sequenceQualityScores":"Pass",
+#         "sequenceContent":"Pass",
+#         "GCContent":"Pass",
+#         "baseNContent":"Pass",
+#         "sequenceLengthDistribution":"Pass",
+#         "sequenceDuplicationLevels":"Pass",
+#         "overrepresentedSequences":"Pass",
+#         "kmerContent":"Pass"
+      },
+      {
+         "sampleName":"2",
+         "lane":2,
+         "Q30Length":89,
+         "libraryID":"56",
+         "software":[
+            {
+               "softwareName":"CASAVA",
+               "version":"1.8.1",
+               "parameters":"--explode TRUE"
+            },
+            {
+               "softwareName":"OtherSoftware",
+               "version":"1",
+               "parameters":"doesnt exist"
+            }
+         ],
+         "fastQCSummary":"/cluster/gsu/data/processed/Stats/Run/130531_SN7001398_0053_AC2410ACXX/Project_GSU_AG_Worm/Sample_3_LIB56_LDI20/3_LIB56_LDI20_TGACCA_L008_R1_001.fastq.gz_screen.png",
+         "md5Hash":"asdhfsahdfljshdfljshdf",
+         "contaminantsImage":"/cluster/gsu/data/processed/Stats/Run/130531_SN7001398_0053_AC2410ACXX/Project_GSU_AG_Worm/Sample_3_LIB56_LDI20/3_LIB56_LDI20_TGACCA_L008_R1_001.pdf",
+         "percentGC":45,
+         "sequenceLength":"100",
+         "sequenceQuality":"Pass",
+         "sequenceQualityScores":"Pass",
+         "sequenceContent":"Pass",
+         "GCContent":"Pass",
+         "baseNContent":"Pass",
+         "sequenceLengthDistribution":"Pass",
+         "sequenceDuplicationLevels":"Pass",
+         "overrepresentedSequences":"Pass",
+         "kmerContent":"Pass",
+         "trimmed":"True"                          #True or blank?
+      }
+   ]
+}
+loads the JSON from the QC script
+

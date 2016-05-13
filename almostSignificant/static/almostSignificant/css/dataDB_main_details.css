@@ -1,0 +1,68 @@
+/* almostSignificant main details css */
+
+#details {
+	background-color: #86E065;
+	background-size: 50% 50%;
+	color: #222222;
+	overflow: hidden;
+	border-bottom: 1px solid #000000;
+	height: 50px;
+	min-width: 750px;
+}
+
+#navLink {
+	padding: 0px 0px 0px 10px;
+	font-size: 13px;
+	font-weight: bold;
+	color: #000000;
+	margin: 0px;
+	overflow: hidden;
+}
+
+ul
+{
+list-style-type:none;
+margin:0;
+padding:0;
+}
+
+#navLinks {
+	float:left;
+	overflow:hidden;
+	height: 100%;
+	width: 10%;
+/*	border-right: 1px solid #4a4a4a;
+	border-top: 1px solid #4a4a4a; */
+	padding-top: 2px;
+}
+
+#statDetail {
+	position:relative;
+	float:right;
+	overflow:hidden;
+	height: 100%;
+	width: 15%;
+/*	border-right: 1px solid #4a4a4a;
+	border-top: 1px solid #4a4a4a; */
+	font-size: 13px;
+	font-weight: bold;
+	color: #000000;
+	}
+
+
+#titleBlock {
+	margin-left:10%;
+	overflow:hidden;
+	line-height: 50px;
+	height: 100%;
+	width = 10%
+}
+
+#detailTitle {
+	padding: 0px 5px 0px 15px;
+	font-size: 18px;
+	font-weight: bold;
+	color: #000000;
+	display: inline-block;
+	margin: 0px;
+}

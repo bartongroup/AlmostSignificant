@@ -1,0 +1,8 @@
+include LICENSE
+include README.rst
+recursive-include almostSignificant/static *
+recursive-include almostSignificant/templates *
+include almostSigificant/dataLoading/dataLoading.py
+include almostSigificant/dataLoading/pdfGenerator.sh
+
+
