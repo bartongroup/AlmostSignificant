@@ -1,1 +1,3 @@
-almostSignificant/static/almostSignificant/* linguist-vendored
+almostSignificant/static/almostSignificant/jquery* linguist-vendored
+almostSignificant/static/almostSignificant/jQuery* linguist-vendored
+almostSignificant/static/almostSignificant/d3* linguist-vendored
