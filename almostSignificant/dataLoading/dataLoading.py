@@ -7,7 +7,6 @@ import xml.etree.ElementTree as ElementTree
 import gzip
 import re
 from collections import Counter
-import requests
 import zipfile
 import django
 import datetime
