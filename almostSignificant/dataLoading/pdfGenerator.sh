@@ -11,17 +11,39 @@ function generateLatexFiles {
     #check we have pdflatex
     if hash pdflatex 2>/dev/null; then
 	    #get the output folders, latex file name and paths for images.
-	    fastqcFolderPath=$1
+        tempPath=$TMPDIR/genPDF/
+	    fastqcInput=$1
+        #if we're given a zip, extract it.
+        #else if we have a folder, use its contents
+        #otherwise exit
+        if [[ ${fastqcInput: -4} == ".zip" ]]; then
+            echo "zip"
+	        sampleName=`basename $fastqcInput _fastqc.zip`
+	        sampleFolder=`basename $fastqcInput .zip`
+	        echo 'sampleName=basename $fastqcFolderPath _fastqc.zip'
+            fastqcFolderPath=$TMPDIR/genPDF/$sampleFolder/
+            imagePath=$TMPDIR/genPDF/$sampleFolder/Images/
+            unzip -o $fastqcInput -d $tempPath
+            if [ $? -ne 0 ]; then echo "Cannot unzip $fastqcFolderPath/($sampleName)_fastqc.zip";exit 1; fi
+        elif [[ -d $fastqcInput ]]; then
+            echo "folder"
+            fastqcFolderPath=$fastqcInput
+	        sampleName=`basename $fastqcFolderPath _fastqc`
+	        imagePath=$fastqcFolderPath/Images/
+        else 
+            echo "Can't find fastqc images folder or .zip file"
+            exit 1
+            #errors!
+        fi
+
+        echo "images $imagePath"
 	    latexOutFolder=$2
 	    runFolderName=$3
 	    #gets the q30 length for the sample
 	    Q30Length=$4
 
-	    sampleName=`basename $fastqcFolderPath _fastqc`
-
 	    latexFile=$latexOutFolder/$sampleName.tex
 	    latexPrefix=$latexOutFolder/$sampleName #this is for passing to generate the 
-	    imagePath=$fastqcFolderPath/Images/
 	    parsedPath=`echo $fastqcFolderPath | sed -e s/_/\\\\\\\\_/g` # swaps underscores for escaped underscores. Yes, that many /
 	    parsedRunFolderName=`echo $runFolderName | sed -e s/_/\\\\\\\\_/g` #again escapes underscores
 	    parsedSampleName=`echo $sampleName | sed -e s/_/\\\\\\\\_/g` #again escapes underscores
@@ -34,8 +56,13 @@ function generateLatexFiles {
 	    					'per_base_sequence_content.png' \
 	    					'per_sequence_gc_content.png' \
 	    					'per_sequence_quality.png' \
-	    					'sequence_length_distribution.png' )
+	    					'sequence_length_distribution.png'\
+                            'adapter_content.png' )
 
+        #handle newer fastqc versions
+        #if the images folder exists, use it
+        #else if the zip files does, use that, 
+        #otherwise error
 	    # checks the files can be created
 	    if ! touch $latexFile
 	    	then echo "Writing latex file failed"
@@ -108,6 +135,20 @@ function generateLatexFiles {
         echo "\\end{table}" >> $latexFile
         echo "\\clearpage" >> $latexFile
 
+        #add the per_tile_quality.png to the plots if it exists
+        if [[ -e $imagePath/per_tile_quality.png ]]; then
+	        echo '\begin{figure}[ht]' >> $latexFile
+	        echo "\caption{ 'per tile sequence quality' }" >> $latexFile
+	        echo '\begin{center}' >> $latexFile
+	        echo '\subfigure{' >> $latexFile
+	        echo "\includegraphics[width=0.3\textwidth]{$imagePath/per_tile_quality.png} }" >> $latexFile
+	        echo '\end{center}' >> $latexFile
+	        echo '\end{figure}' >> $latexFile
+
+        fi
+
+        
+
 	    echo '\end{document}' >> $latexFile
 
         #running  
@@ -120,6 +161,9 @@ function generateLatexFiles {
 	    rm -v $latexPrefix.tex 
 	    rm -v $latexPrefix.aux 
 	    rm -v $latexPrefix.log
+        if [[ -e $TMPDIR/genPDF ]]; then
+            rm -vr $TMPDIR/genPDF 
+        fi
 
         return 0
     #if pdflatex isn't in path, errro
@@ -129,7 +173,8 @@ function generateLatexFiles {
  fi
 }
 
-#first arguement is the path of the _fastqc folder
-#the second arguement is the runFolder ID. This is just for record Keeping
-#third arguement is the Q30 length
-generateLatexFiles $1 $2 $3 
+#first arguement is the path of the _fastqc folder or the zip
+#second is the latex output folder
+#the third arguement is the runFolder ID. This is just for record Keeping
+#forth arguement is the Q30 length
+generateLatexFiles $1 $2 $3 $4
