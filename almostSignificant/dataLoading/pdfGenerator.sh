@@ -17,7 +17,6 @@ function generateLatexFiles {
         #else if we have a folder, use its contents
         #otherwise exit
         if [[ ${fastqcInput: -4} == ".zip" ]]; then
-            echo "zip"
 	        sampleName=`basename $fastqcInput _fastqc.zip`
 	        sampleFolder=`basename $fastqcInput .zip`
 	        echo 'sampleName=basename $fastqcFolderPath _fastqc.zip'
@@ -26,7 +25,6 @@ function generateLatexFiles {
             unzip -o $fastqcInput -d $tempPath
             if [ $? -ne 0 ]; then echo "Cannot unzip $fastqcFolderPath/($sampleName)_fastqc.zip";exit 1; fi
         elif [[ -d $fastqcInput ]]; then
-            echo "folder"
             fastqcFolderPath=$fastqcInput
 	        sampleName=`basename $fastqcFolderPath _fastqc`
 	        imagePath=$fastqcFolderPath/Images/
@@ -36,7 +34,6 @@ function generateLatexFiles {
             #errors!
         fi
 
-        echo "images $imagePath"
 	    latexOutFolder=$2
 	    runFolderName=$3
 	    #gets the q30 length for the sample
@@ -72,8 +69,6 @@ function generateLatexFiles {
 	    	then echo "but the file doesn't exist"
 	    	exit 1
 	    fi
-	    echo $latexFile
-	    pwd
 
 	    #normal latex premable
         #packages used: graphicx, subfigure, color, helvet, geometry
@@ -153,16 +148,17 @@ function generateLatexFiles {
 
         #running  
 	    if [ -e $latexPrefix.tex ]; then
-	    	pdflatex --shell-escape --file-line-error --interaction=batchmode --output-directory $latexOutFolder $latexPrefix.tex 
+	    	pdflatex --shell-escape --file-line-error --interaction=batchmode --output-directory $latexOutFolder $latexPrefix.tex &> /dev/null 
 	    else
 	    	echo "Latex Prefix $latexPrefix.tex not found"
 	    fi
 	    #latex tidyup
-	    rm -v $latexPrefix.tex 
-	    rm -v $latexPrefix.aux 
-	    rm -v $latexPrefix.log
+	    rm $latexPrefix.tex 
+	    rm $latexPrefix.aux 
+	    rm $latexPrefix.log
         if [[ -e $TMPDIR/genPDF ]]; then
-            rm -vr $TMPDIR/genPDF 
+            #echo "Cleaned up temporary folder $TMPDIR/genPDF/"
+            rm -r $TMPDIR/genPDF 
         fi
 
         return 0
@@ -177,4 +173,15 @@ function generateLatexFiles {
 #second is the latex output folder
 #the third arguement is the runFolder ID. This is just for record Keeping
 #forth arguement is the Q30 length
-generateLatexFiles $1 $2 $3 $4
+if [ "$1" == "" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    echo "This script generates a pdf for the fastqc output."
+    echo "Arg 1: path to the *_fastqc folder or *_fastqc.zip."
+    echo "Arg 2: output folder for the latex files."
+    echo "Arg 3: run folder ID. Just for record keeping. Any string will do in a pinch."
+    echo "Arg 4: Q30 length, just for record keeping again, if you don't know, write NA?"
+    exit 0
+    #help!
+else
+    generateLatexFiles $1 $2 $3 $4
+fi
+

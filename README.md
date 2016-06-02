@@ -8,3 +8,4 @@ AlmostSignificant has been used to track the quality of over 80 sequencing runs 
 
 Requires python 2.7, the illuminate package (available via pip install illuminate), and django >1.7 and pdflatex. 
 
+For more help, suggestions or information, please email Joe Ward at j.x.ward@dundee.ac.uk.

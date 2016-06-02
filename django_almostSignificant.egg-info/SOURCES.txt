@@ -1,6 +1,6 @@
 LICENSE
 MANIFEST.in
-README.rst
+README.md
 setup.py
 almostSignificant/__init__.py
 almostSignificant/admin.py

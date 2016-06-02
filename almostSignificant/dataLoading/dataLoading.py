@@ -35,10 +35,14 @@ def openFileReadLines( targetFile ):
         openTargetFile.close()
         #strip all newline characters
         targetFileLines = map(lambda s: s.strip(), targetFileLines) 
-    except IOError:
+    except IOError as e:
         print "Cannot open or access the file: %s" % targetFile
+        print e
         raise
-#        sys.exit()
+    except:
+        print("Unexpected Error loading files:", sys.exc_info()[0]) 
+        raise
+   
     return targetFileLines
 
 
@@ -56,7 +60,16 @@ def parseOldSampleSheet( sampleSheetLocation ):
 
    
     #load data from the file 
-    sampleSheetLines = openFileReadLines( sampleSheetLocation )
+    try:
+        print "Parsing Sample Sheet File %s" % sampleSheetLocation
+        sampleSheetLines = openFileReadLines( sampleSheetLocation )
+    except IOError:
+        print "Sample Sheet Parsing Failed"
+        raise
+    except:
+        print("Unexpected Error parsing sample sheet:", sys.exc_info()[0]) 
+        raise
+   
 
     #loop over all of the entries,creating a dict with an entry for each sample
     sampleSheetDict = {}
@@ -107,7 +120,17 @@ def parseNextseqSampleSheet( sampleSheetLocation ):
     """
 
     #load data
-    sampleSheetLines = openFileReadLines( sampleSheetLocation )
+    try:
+        print "Parsing Sample Sheet File %s" % sampleSheetLocation
+        sampleSheetLines = openFileReadLines( sampleSheetLocation )
+    except IOError:
+        print "Sample Sheet Parsing Failed"
+        raise
+    except:
+        print("Unexpected Error parsing sample sheet:", sys.exc_info()[0]) 
+        raise
+   
+        
 
     header = {}
     reads = {}
@@ -188,7 +211,16 @@ def parseHiseqSampleSheet( sampleSheetLocation ):
     
     """
     #load data
-    sampleSheetLines = openFileReadLines( sampleSheetLocation )
+    try:
+        print "Parsing Sample Sheet File %s" % sampleSheetLocation
+        sampleSheetLines = openFileReadLines( sampleSheetLocation )
+    except IOError:
+        print "Sample Sheet Parsing Failed"
+        raise
+    except:
+        print("Unexpected Error parsing sample sheet:", sys.exc_info()[0]) 
+        raise
+   
 
     header = {}
     reads = {}
@@ -263,17 +295,25 @@ def loadFastQCZip( fastQCZipFile ):
     """
 
     #load the zip file
-    zipFile = file(fastQCZipFile)
-    zipData = zipfile.ZipFile( zipFile )
-    #get the summary.txt contents
-    summaryFileName= [ s for s in zipData.namelist() if "summary.txt" in s][0]
-    fastQCSummaryBytes = zipData.open(summaryFileName)
-    fastQCSummary = fastQCSummaryBytes.readlines()
-    #get the data.
-    dataFileName= [ s for s in zipData.namelist() if "fastqc_data.txt" in s][0]
-    fastQCDataBytes = zipData.open(dataFileName)
-    fastQCData = fastQCDataBytes.readlines()
-    
+    try:
+        #print "Loading data from FastQC"
+        zipFile = file(fastQCZipFile)
+        zipData = zipfile.ZipFile( zipFile )
+        #get the summary.txt contents
+        summaryFileName= [ s for s in zipData.namelist() if "summary.txt" in s][0]
+        fastQCSummaryBytes = zipData.open(summaryFileName)
+        fastQCSummary = fastQCSummaryBytes.readlines()
+        #get the data.
+        dataFileName= [ s for s in zipData.namelist() if "fastqc_data.txt" in s][0]
+        fastQCDataBytes = zipData.open(dataFileName)
+        fastQCData = fastQCDataBytes.readlines()
+    except IOError:
+        print "Failed to open FastQC Zip %s" % fastQCZipFile
+        raise
+    except:
+        print("Unexpected Error loading fastqc zip file:", sys.exc_info()[0]) 
+        raise
+   
     return [fastQCSummary, fastQCData]
 
     #open the fastqc zip file safely
@@ -316,6 +356,7 @@ def parseFastQCData( fastQCDataLocation=False, fastQCSummaryObject=False ):
     #print "fastQCDataLocation: %s" % fastQCDataLocation
     #print "fastQCSummaryObject: %s" % fastQCSummaryObject
     #load data from the file or from the input list
+    #print "Parsing FastQC data"
     if fastQCDataLocation != False:
         try:
             openFastQCSummary = open("%s/summary.txt" % fastQCDataLocation, "r")
@@ -340,6 +381,8 @@ def parseFastQCData( fastQCDataLocation=False, fastQCSummaryObject=False ):
             print "Cannot open or access the fastQC summary: %s/fastqc_data.txt" \
                                                                             % fastQCDataLocation
             print sys.exc_info()[0]
+            raise
+
     elif fastQCSummaryObject != False:
         try:
             fastQCSummaryLines = fastQCSummaryObject[0]
@@ -348,10 +391,10 @@ def parseFastQCData( fastQCDataLocation=False, fastQCSummaryObject=False ):
             fastQCDataLines = map(lambda s: s.strip(), fastQCDataLines) 
         except:
             print "Unable to get data from the fastQCSummaryObject data"
+            raise
     else:
         print "Unable to load any data."
-        #sys.exit()
-        raise
+        raise Exception("Unable to load any FastQC data")
 
     
    
@@ -360,9 +403,10 @@ def parseFastQCData( fastQCDataLocation=False, fastQCSummaryObject=False ):
         #print fastQCSummaryLines
         print "Summary has no content" % fastQCDataLocation
         #sys.exit()
-        raise
+        raise Exception("FastQC Summary has no content")
     if len(fastQCDataLines)==0:
         print "Data has no content" % fastQCDataLocation
+        raise Exception("FastQC Data has no content")
         #sys.exit() 
     
     passWarnFailDict = {}
@@ -411,8 +455,9 @@ def parseFastQCData( fastQCDataLocation=False, fastQCSummaryObject=False ):
         elif splitLine[1] == 'Adapter Content':
             passWarnFailDict["adapterContent"] = splitLine[0]
 
-        else:
-            print "Error in fastqc summary.txt"
+        elif splitLine[1] == 'Per tile sequence quality':
+            print "Error in fastqc summary.txt: unexpected line"
+            raise Exception("Error in fastQC loading")
             #print splitLine
             #sys.exit()
 
@@ -512,7 +557,16 @@ def parseFastQScreenSummary( fastQScreenSummaryFile ):
 
     """
 
-    fastQScreenSummary = openFileReadLines( fastQScreenSummaryFile )
+    try:
+        #print "Parsing FastQScreen Summary "
+        fastQScreenSummary = openFileReadLines( fastQScreenSummaryFile )
+    except IOError:
+        print "Failed parsing fastQScreen files"
+        raise
+    except:
+        print("Unexpected Error parsing fastQScreen Files:", sys.exc_info()[0]) 
+        raise
+   
     summaryOutput = {}
     if not re.match("#Fastq_screen version: .+", fastQScreenSummary[0]):
         raise Exception("Not a fastq screen summary file")    
@@ -561,7 +615,16 @@ def parseMD5Hash( md5FileLocation ):
 
     """
 
-    md5FileLines = openFileReadLines( md5FileLocation )
+    try:
+        print "Parsing md5 hash."
+        md5FileLines = openFileReadLines( md5FileLocation )
+    except IOError:
+        print "Failed parsing md5hash file %s" %md5FileLocation
+        raise
+    except:
+        print("Unexpected Error parsing md5hash file:", sys.exc_info()[0]) 
+        raise
+   
 
     md5Dict = {}
     for md5Line in md5FileLines:
@@ -600,6 +663,7 @@ def parseHiseqRunParameters( runParametersLocation ):
 #    runParametersLine = openFileReadLines( runParametersLocation )
 
     try:
+        print "Parsing Run Parameters."
         runParametersXML = ElementTree.parse(runParametersLocation)
         runParameters = runParametersXML.getroot()
         runParameters = runParameters[0]
@@ -690,6 +754,7 @@ def parseNextSeqRunParameters( runParametersLocation ):
 #    runParametersLine = openFileReadLines( runParametersLocation )
 
     try:
+        print "Parsing Run Parameters"
         runParametersXML = ElementTree.parse(runParametersLocation)
         runParameters = runParametersXML.getroot()
     except IOError:
@@ -759,13 +824,19 @@ def parseInterOp( runFolderLocation ):
     except ImportError, e:
         print "Cannot import illuminate"
         raise
+    except:
+        print("Unexpected Error importing illuminate:", sys.exc_info()[0]) 
+        raise
+   
 
     #Parse the interop files for the clusterDensity information.
     try:
+        print "Loading InterOp data."
         interOpObject = InteropDataset( runFolderLocation )
     except:
         print "Cannot load InterOp data from %s" % runFolderLocation
         raise
+   
 
     #Get the details of the first base report for the lane
     #try:
@@ -775,7 +846,12 @@ def parseInterOp( runFolderLocation ):
     #    raise
 
     #get the tile metrics specifically
-    tileMetrics = interOpObject.TileMetrics()
+    try:
+        tileMetrics = interOpObject.TileMetrics()
+    except:
+        print "failed loading tileMetrics from InterOp data"
+        raise Exception("failed loading interop data")
+    
     #as it's done on a tile bases, gather the tiles into dicts
     #keys are the lanes
     densityDict = {}
@@ -850,6 +926,7 @@ def parseFirstBaseReport( runFolderLocation ):
  
     #load data from the file 
     try:
+        print "Parsing first base report"
         openTargetFile = open(firstBaseReportLocation, "r")
         targetFileLines = openTargetFile.readlines()
         openTargetFile.close()
@@ -858,6 +935,7 @@ def parseFirstBaseReport( runFolderLocation ):
     except IOError:
         print "Cannot open or access the file: %s" % firstBaseReportLocation
         raise
+   
 
     firstBaseReport = targetFileLines
     
@@ -896,7 +974,16 @@ def parseDemultiplexConfig( demultiplexConfigFile ):
 
     """
     casavaDetails = []
-    demultiplexConfigXML = ElementTree.parse(demultiplexConfigFile)
+    try:
+        print "Parsing Run Parameters"
+        demultiplexConfigXML = ElementTree.parse(demultiplexConfigFile)
+    except IOError:
+        print "Cannot load information from %s" % demultiplexConfigFile
+        raise
+    except ElementTree.ParseError:
+        print "Invalid XML in %s" % demultiplexConfigFile
+        raise
+
     for softwareDetails in demultiplexConfigXML.iterfind("Software"):
         versionString = softwareDetails.attrib["Version"]
         commandArgs = softwareDetails.attrib["CmdAndArgs"]
@@ -917,13 +1004,21 @@ def generateLatexFile( sampleName, destinationFolder, fastQCFolder, runName, q30
     #eventually and ideally this will just be written in python.
     #for now though, we'll just use what we've got in bash. 
     pdfGeneratorScript = "pdfGenerator.sh"
-    print pdfGeneratorScript
     #script takes the inputs:
     #fastqcFolderPath, runFolderName, q30 length
     pdfGeneratorArguements = [pdfGeneratorScript, fastQCFolder, destinationFolder, runName, q30Length]
-    print pdfGeneratorArguements
     try:
         pdfGeneratorProcess = subprocess.check_call( pdfGeneratorArguements )
+    except ValueError:
+        print "Invalid arguements: %s" % pdfGeneratorArguements
+        raise
+    except OSError:
+        print "OSError, likely due to missing files: %s" % pdfGeneratorArguements
+        print "Is pdfGenerator.sh on the path?\n"
+        raise
+    except subprocess.CalledProcessError:
+        print "%s had a non-0 exit code" % pdfGeneratorScript
+        raise
     except:
         print ("Failed to generate pdf file for %s") % fastQCFolder
         #sys.exit(1)
@@ -954,7 +1049,6 @@ def parseUndeterminedReads( undetReadFileOne, maxBarcodes=10 ):
     except ValueError, e:
         print e
         raise
-
     #regex for finding barcodes from fastq files
     fastqReadBarcode = re.compile("^\@(\S+) (\S+)\:(\S{6,17})$") 
 
@@ -965,9 +1059,13 @@ def parseUndeterminedReads( undetReadFileOne, maxBarcodes=10 ):
 
     barcodes = []
     #took me ages to work this out. Turns it from hours to minutes.
-    with gzip.open(undetReadFileOne) as undetGzip:
-        for line in undetGzip.readlines()[::4]:
-                    barcodes.append(line.strip().split(":")[-1])
+    try:
+        with gzip.open(undetReadFileOne) as undetGzip:
+            for line in undetGzip.readlines()[::4]:
+                        barcodes.append(line.strip().split(":")[-1])
+    except: 
+        print "Could not open gzip file %s to parse the undetermined reads" % undetReadFileOne
+        raise 
 
     #uniqueBarcodes = barcodes.unique()
     totalUndet = len(barcodes)
@@ -996,13 +1094,13 @@ def createMediaFolder( runName ):
     """creates a run folder based on the run name given, if one doesn't already exist,
         that is located in the django media folder location"""
     mediaFolder = settings.MEDIA_ROOT
-    print mediaFolder
     currentMediaFolder = os.path.join(mediaFolder, runName)
     try:
         if not os.path.exists( currentMediaFolder ):
             os.mkdir( currentMediaFolder )
     except:
         print "Cannot create media folder: %s" % currentMediaFolder
+        raise
 
     return currentMediaFolder    
 
@@ -1012,6 +1110,7 @@ def moveFileToMediaFolder( filePath, destinationFolder ):
         shutil.copy(filePath, destinationFolder)
     except:
         print "Cannot copy %s to %s" %(filePath, destinationFolder)
+        raise
     
     
 ################################################################################
@@ -1026,45 +1125,74 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     files for all of the fastQ files
 
     """
+    try:
+        if os.path.isdir(runLocation):
+            print "Processed run location: %s" %runLocation
+        else:
+            raise IOError("%s is not a valid Run Folder" % runLocation)
+        if os.path.isdir(rawLocation):
+            print "Raw sequencing location: %s" %rawLocation
+        else:
+            raise IOError("%s is not a valid Raw seqeuncing Folder" % rawLocation)
+        if os.path.isdir(qCFolder):
+            print "QC folder location: %s" %runLocation
+        else:
+            raise IOError("%s is not a valid Folder" % qCFolder)
+        print "Importing as a %s run." % machineType
+    except: 
+        print "Failed to initialise data loading. I hope if raised some useful error!"
+        raise
+
+    print ""
+            
     
-    runName = runLocation.split("/")[-2]
+    runName = rawLocation.split("/")[-2]
     machineName, flowCellID = runName.split("_")[1:3]
     #gather the information from the sample sheet
     sampleSheetLocation = "/".join([rawLocation,"SampleSheet.csv"])
 
     ## Section specific to machine type: Nextseq or Hiseq
+    print "Gathering initial data."
     if machineType.lower() == "nextseq":
         #nextseq data gathering
-        sampleSheetData = parseNextseqSampleSheet(sampleSheetLocation)
-        machineType = "NextSeq"
-        runParameters = parseNextSeqRunParameters( "".join([rawLocation,"RunParameters.xml"]) )
-        softwareToAdd = ["PR2BottleSerial", "Chemistry", "ReagentKitSerial", "controlSoftware", "RTAVersion"]
+        try:
+            sampleSheetData = parseNextseqSampleSheet(sampleSheetLocation)
+            machineType = "NextSeq"
+            runParameters = parseNextSeqRunParameters( "".join([rawLocation,"RunParameters.xml"]) )
+            softwareToAdd = ["PR2BottleSerial", "Chemistry", "ReagentKitSerial", "controlSoftware", "RTAVersion"]
 
 
-        length = sampleSheetData["Reads"]["read1"]#samplesheet
-        if "read2" in sampleSheetData["Reads"]:
-            pairedSingle = "paired"#samplesheet
-        else:
-            pairedSingle = "single"
-        FCPosition = 1
-        seqLanes = [1,2,3,4] #how many lanes the nextseq can potentially have
-
+            length = sampleSheetData["Reads"]["read1"]#samplesheet
+            if "read2" in sampleSheetData["Reads"]:
+                pairedSingle = "paired"#samplesheet
+            else:
+                pairedSingle = "single"
+            FCPosition = 1
+            seqLanes = [1,2,3,4] #how many lanes the nextseq can potentially have
+        except:
+            print "Failed to load run into AlmostSignificant"
+            raise
     elif machineType.lower() == "hiseq":
         #hiseq data gathering
-        sampleSheetData = parseHiseqSampleSheet(sampleSheetLocation)
-        machineType = "HiSeq"
-        runParameters = parseHiseqRunParameters( "".join([rawLocation,"runParameters.xml"]) )
-        softwareToAdd = [ "RTAVersion", "cameraDriver", "cameraFirmware", "sbsReagentKit",\
-                         "washBarcode", "controlSoftware", "FCPosition", "chemistryVersion"]
+        try:
+            sampleSheetData = parseHiseqSampleSheet(sampleSheetLocation)
+            machineType = "HiSeq"
+            runParameters = parseHiseqRunParameters( "".join([rawLocation,"runParameters.xml"]) )
+            softwareToAdd = [ "RTAVersion", "cameraDriver", "cameraFirmware", "sbsReagentKit",\
+                             "washBarcode", "controlSoftware", "FCPosition", "chemistryVersion"]
 
 
-        length = runParameters["length"]
-        pairedSingle = runParameters["pairedSingle"]
-        FCPosition = runParameters["FCPosition"]
-        seqLanes = [1,2,3,4,5,6,7,8] #how many lanes the nextseq can potentially have
+            length = runParameters["length"]
+            pairedSingle = runParameters["pairedSingle"]
+            FCPosition = runParameters["FCPosition"]
+            seqLanes = [1,2,3,4,5,6,7,8] #how many lanes the nextseq can potentially have
+        except:
+            print "Failed to load run into AlmostSignificant"
+            raise
     else:
         #throw a tantrum
         print "InputMachineType of %s not elegible. Please use nextseq (default) or hiseq" % machineType
+        raise Exception("Machine type of %s unknown" % machineType)
         #sys.exit(1)
 
     
@@ -1077,10 +1205,13 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     alias = "" #? can't remember what this was intended for. Keeping is as useful later?
 
     #Add run to AlmostSignificant
-    print "Adding Run"
     runDetails = {"runName":runName, "machine":machine, "machineType":machineType, "date":date,\
                     "alias":alias, "length":length, "pairedSingle":pairedSingle, "fcPosition":FCPosition}
-    thisRun = addRunToDatabase( runDetails )
+    try:
+        thisRun = addRunToDatabase( runDetails )
+    except:
+        print "Gathered run details but failed to load it to the database"
+        raise
     run_id = thisRun.id
 
     #gathing InterOp data
@@ -1092,6 +1223,7 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     totalUndetsForRun = {}
     undetIndiciesForRun = {}
     if checkUndetIndicies == True:
+        print "Checking the undetermined indicies. This can take a few minutes."
         #find all the undetermined index files
         #now initiated in the machinechecking loop
         #SeqLanes = [1,2,3,4] #how many lanes the nextseq can potentially have
@@ -1105,11 +1237,12 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
             #if the file exists
             if os.path.exists( currentUndetFile ):
                 #run parseUndeterminedReads and add it to the undetIndiciesForRun array under the lane num
-                print "Checking Undetermined Indicies for %s" % currentUndetFile
+                print "Checking Undetermined Indicies for %s" % os.path.basename(currentUndetFile)
                 totalUndetsForRun[currentLane], undetIndiciesForRun[currentLane] = parseUndeterminedReads( currentUndetFile ) 
             else:
                 #occasionally, if a run has no barcodes, there isn't any undetermined reads, so deal with this
                 #by setting everything to 0 if the undetermined index file doesn't exist
+                print "Undetermined_incidies file (%s) not found. Setting undetermined Indexes to 0." % currentUndetFile
                 totalUndetsForRun[currentLane] = "0" 
                 undetIndiciesForRun[currentLane] = {1:["-","0"], 2:["-","0"], 3:["-","0"], 4:["-","0"], 5:["-","0"], 6:["-","0"], 7:["-","0"], 8:["-","0"], 9:["-","0"], 10:["-","0"] }
                 
@@ -1122,11 +1255,9 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
                                 9: emptyUndetIndicies, 10: emptyUndetIndicies }
         #sets all lanes to have a total undertermined indicies total of 0 for the top 10
         totalUndetsForRun = {1:"0",2:"0",3:"0",4:"0",5:"0",6:"0",7:"0",8:"0",9:"0",10:"0"}
-    print totalUndetsForRun
 #   #Lane Parameters
-    print "Adding Lanes"
+    print "Adding Lane information."
     for lane, laneData in interOpData.iteritems():
-        print lane
         thisLane = {"run_id":run_id, "lane":lane, \
                             "ClusterPFDensity":laneData["clusterPFDensity"],\
                             "percPassingFilter": (laneData["numClustersPF"] / laneData["numClusters"] * 100), \
@@ -1150,13 +1281,11 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
         if checkUndetIndicies == False:
             addUndetIndicesToDatabase( undetIndiciesForRun[lane], interOpData[lane]["lane_id"] )
         else:
-            print "undetIndiciesForRun"
-            print undetIndiciesForRun
-            print "##########"
             addUndetIndicesToDatabase( undetIndiciesForRun[lane], interOpData[lane]["lane_id"], forceUpdate=True )
 
     ### Software ###
     #loop over currentSample software
+    print "Gathering software and reagent data."
     software_object_array = []
     #0 is the software, 1 is the version, 2 is the parameters
     #runParameteters now defined at start of function in the machine type checking section
@@ -1184,12 +1313,17 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     #initiate the search strings for lane and read numbers
     readNumberSearchString = re.compile('_R(\d)_') #As before
     laneNumberSearchString = re.compile('_L00(\d)_') #As before
-    print "Adding Samples"
+    
+    print "Gathering sample information."
+    print "Adding %s Samples." % len(sampleSheetData["Data"])
+    counter = 1
     #print sampleSheetData["Data"]
     #loop over each sample in the samplesheet
     #print sampleSheetData["Data"]
     for currentSampleName, currentSample in sampleSheetData["Data"].iteritems():
-        #print currentSample
+        print "Adding sample %s (%i/%i)." %( currentSampleName, counter, len(sampleSheetData["Data"]) )
+        counter = counter+1
+
         sampleData = {} # initiate the dict
         #for each of the samples, gather the appropriate data
         sampleData["thisRun"] = thisRun #generated when we create the run in the db
@@ -1223,7 +1357,6 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
                 or (fnmatch.fnmatch(fastqFile, patternDash)): #sigh, illumina
                     if fnmatch.fnmatch(fastqFile, patternDash):
                         sampleData["sampleReference"] = sampleData["sampleReference"].replace("_","-")
-                    print fastqFile
                     fastQScreenSummary = "" #set this for later
                     #get read number
                     sampleData["readNumber"] = readNumberSearchString.search(fastqFile).group(1)
@@ -1249,7 +1382,6 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
                                                 sampleData["readNumber"])
                         for currentQCFile in allQCFiles:
                             if fnmatch.fnmatch(currentQCFile, fastQCZipName):
-                                print currentQCFile, fastQCZipName
                                 #parse the fastqc results. 
                                 currentFastQCZip = loadFastQCZip( "%s/%s" %( root, currentQCFile ) )
                                 parsedQC = parseFastQCData(fastQCSummaryObject=currentFastQCZip) 
@@ -1300,6 +1432,7 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
         
                     sample = addSampleToDatabase( sampleData, software_object_array )
                     addContaminantsDetailsToDatabase( fastQScreenSummary, sample.id )
+    print "Done."
                     
     
 
@@ -1313,16 +1446,15 @@ def addSoftwareToDatabase( softwareName, softwareVersion, softwareParameters="" 
         Takes three parameters for the software: name, version, parameters
         where the default parameters is \"\"
     """
-
+    #print "Adding %s to the software database."
     try:
-        currentSoftware = Software.objects.get( softwareName=softwareName,\
+        currentSoftware, created = Software.objects.get_or_create( softwareName=softwareName,\
                                                         version=softwareVersion,\
                                                         parameters=softwareParameters )
-    except django.core.exceptions.ObjectDoesNotExist:
-        currentSoftware = Software(softwareName=softwareName,\
-                                        version=softwareVersion,\
-                                        parameters=softwareParameters )
-        currentSoftware.save()
+    except:
+        print "Failed to update or create software entry for %s." % softwareName
+        raise
+    
  
     return currentSoftware
         
@@ -1337,9 +1469,10 @@ def addRunToDatabase( runData ):
         Returns the runID
         """
     #Add run to AlmostSignificant
+    print "Adding the run to the database."
     try:
         #print runData["runName"]
-        thisRun = Run.objects.get(runName=runData["runName"])
+        thisRun, created = Run.objects.get_or_create(runName=runData["runName"])
         thisRun.machine = runData["machine"]
         thisRun.machineType = runData["machineType"]
         thisRun.date = runData["date"]
@@ -1349,12 +1482,8 @@ def addRunToDatabase( runData ):
         thisRun.fcPosition = runData["fcPosition"]
         thisRun.save()
     except:
-        #construct the run for saving
-        thisRun = Run( runName=runData["runName"], machine=runData["machine"],\
-                     machineType=runData["machineType"], date=runData["date"],\
-                     alias=runData["alias"], length=runData["length"],\
-                     pairedSingle=runData["pairedSingle"], fcPosition = runData["fcPosition"] )
-        thisRun.save()
+        print "Failed to create or update run entry."
+        raise
     
     return thisRun
 
@@ -1381,9 +1510,10 @@ def addLaneToDatabase( laneData ):
         numClustersPFStdDev
        
     """
+    #print "Adding lane %s to the database." % laneData["lane"]
     try:
         #add stuff to the actual database.
-        thisLane = Lane.objects.get(lane=laneData["lane"], run_id=laneData["run_id"])
+        thisLane, created = Lane.objects.get_or_create(lane=laneData["lane"], run_id=laneData["run_id"])
         thisLane.ClusterPFDensity = laneData["clusterPFDensity"]
         thisLane.clusterPFDensityStdDev = laneData["clusterPFDensityStdDev"]
         thisLane.clusterDensity = laneData["clusterDensity"]
@@ -1398,22 +1528,8 @@ def addLaneToDatabase( laneData ):
         thisLane.totalUndetIndexes = laneData["totalUndetIndexes"]
         thisLane.save()
     except:
-        #calculate the last few things we need to know
-        thisLane = Lane(run_id=laneData["run_id"], lane=laneData["lane"],\
-                            ClusterPFDensity=laneData["clusterPFDensity"],\
-                            percPassingFilter=laneData["percPassingFilter"],\
-                            readsPassingFilter=laneData["readsPassingFilter"],\
-                            totalUndetIndexes=laneData["totalUndetIndexes"],\
-                            percentOverQ30=laneData["percentOverQ30"],\
-                            numClusters = laneData["numClusters"],\
-                            clusterDensity=laneData["clusterDensity"], \
-                            clusterDensityStdDev=laneData["clusterDensityStdDev"],\
-                            clusterPFDensityStdDev=laneData["clusterPFDensityStdDev"],\
-                            firstBaseDensity=laneData["firstBaseDensity"],\
-                            numClustersStdDev = laneData["numClustersStdDev"],\
-                            numClustersPF = laneData["numClustersPF"], \
-                            numClustersPFStdDev = laneData["numClustersPFStdDev"])
-        thisLane.save()
+        print "Failed to create lane entry for lane %s." % laneData["lane"]
+        raise
 
     return thisLane
 
@@ -1421,19 +1537,18 @@ def addProjectToDatabase( projectData ):
     """Adds the project to the database
     Input is a dict containing: projectName, projectMISOID, projectPROID, owner,description
         """
+    
+    #print "Adding project %s to the database." % projectData["projectName"]
     try:
-        thisProject = Project.objects.get(project=projectData["projectName"])
+        thisProject, created = Project.objects.get_or_create(project=projectData["projectName"])
         thisProject.projectMISOID = projectData["projectMISOID"]
         thisProject.projectPROID = projectData["projectPROID"]
         thisProject.owner = projectData["owner"]
         thisProject.description = projectData["description"]
         thisProject.save()
-
-    except django.core.exceptions.ObjectDoesNotExist:
-        thisProject = Project(project=projectData["projectName"], projectMISOID=projectData["projectMISOID"], \
-                            projectPROID=projectData["projectPROID"], owner=projectData["owner"], \
-                            description=projectData["description"])
-        thisProject.save()
+    except:
+        print "Failed to create or update project entry for %s." % projectData["projectName"]
+        raise
 
     return thisProject
     
@@ -1464,15 +1579,16 @@ def addSampleToDatabase( sampleData, software_object_array ):
         generated by addSoftwareToDatabase) to link with the sample
     """
     try:
-        thisSample = Sample.objects.get(sampleReference=sampleData["sampleReference"],\
+        thisSample, created = Sample.objects.get_or_create(sampleReference=sampleData["sampleReference"],\
                                         sampleName=sampleData["sampleName"],\
-                                        run_id=sampleData["thisRun"],\
-                                        lane_id=sampleData["thisLane"],\
-                                        project_id=sampleData["thisProject"],\
+                                        run_id=sampleData["thisRun"].id,\
+                                        lane_id=sampleData["thisLane"].id,\
+                                        project_id=int(sampleData["thisProject"].id),\
                                         libraryReference=sampleData["libraryReference"],\
-                                        readNumber=sampleData["readNumber"])
+                                        readNumber=int(sampleData["readNumber"]),
+                                        reads=int(sampleData["reads"]))
         thisSample.readNumber = sampleData["readNumber"]
-        thisSample.reads = sampleData["reads"]
+        thisSample.reads = int(sampleData["reads"])
         thisSample.sequenceLength = sampleData["sequenceLength"]
         thisSample.sampleDescription = sampleData["sampleDescription"]
         thisSample.libraryReference = sampleData["libraryReference"]
@@ -1498,41 +1614,10 @@ def addSampleToDatabase( sampleData, software_object_array ):
         thisSample.overrepresentedSequences = sampleData["overrepresentedSequences"]
         thisSample.kmerContent = sampleData["kmerContent"]
         thisSample.save()
-
     except:
-    #create the sample object
-        thisSample  =  Sample(run = sampleData["thisRun"],\
-                            project = sampleData["thisProject"],\
-                            lane = sampleData["thisLane"],\
-                            sampleReference = sampleData["sampleReference"],\
-                            sampleName = sampleData["sampleName"],\
-                            readNumber = sampleData["readNumber"],\
-                            reads = sampleData["reads"],\
-                            sequenceLength = sampleData["sequenceLength"],\
-                            sampleDescription = sampleData["sampleDescription"],\
-                            libraryReference = sampleData["libraryReference"],\
-                            barcode = sampleData["barcode"],\
-                            species = sampleData["species"],\
-                            method = sampleData["method"],\
-                            fastQLocation = sampleData["fastQLocation"],\
-                            md5hash = sampleData["md5Hash"],\
-                            QCStatus = sampleData["QCStatus"],\
-                            insertLength = sampleData["insertLength"],\
-                            contaminantsImage = sampleData["contaminantsLink"],\
-                            fastQCSummary = sampleData["fastQCLink"],\
-                            filteredSequences = sampleData["filteredSequences"],\
-                            Q30Length = sampleData["Q30Length"],\
-                            percentGC = sampleData["percentGC"],\
-                            sequenceQuality = sampleData["sequenceQuality"],\
-                            sequenceQualityScores = sampleData["sequenceQualityScores"],\
-                            sequenceContent = sampleData["sequenceContent"],
-                            GCContent = sampleData["GCContent"],\
-                            baseNContent = sampleData["baseNContent"],\
-                            sequenceLengthDistribution = sampleData["sequenceLengthDistribution"],\
-                            sequenceDuplicationLevels = sampleData["sequenceDuplicationLevels"],\
-                            overrepresentedSequences = sampleData["overrepresentedSequences"], \
-                            kmerContent = sampleData["kmerContent"])
-        thisSample.save()
+        print "Failed to update or save entry for sample %s." % sampleData["sampleName"]
+        raise
+        
     #add the software models to the sample
     for softwareModel in software_object_array:
         thisSample.software.add(softwareModel)
@@ -1565,6 +1650,7 @@ def addUndetIndicesToDatabase( undetIndiciesForLane, lane_id, forceUpdate=False 
                 undetIndexAlreadyPresent.delete()
         except:
             print "Could not remove undetermined indexes that were already present"
+            raise
             #sys.exit(1)
         
     #then add the details to it
@@ -1589,7 +1675,7 @@ def addContaminantsDetailsToDatabase( contaminantsSummary, sample_id ):
     for organism, contaminantValues in contaminantsSummary.iteritems():
 
         try:
-            thisContam = ContaminantsDetails.objects.get( sample_id=sample_id, organism=organism )
+            thisContam, created = ContaminantsDetails.objects.get_or_create( sample_id=sample_id, organism=organism )
             thisContam.percUnmapped = contaminantValues["Unmapped"]
             thisContam.oneHitOneLib = contaminantValues["One_hit_one_library"]
             thisContam.manyHitOneLib = contaminantValues["Multiple_hits_one_library"]
@@ -1600,35 +1686,24 @@ def addContaminantsDetailsToDatabase( contaminantsSummary, sample_id ):
                 thisContam.hitsNoLibraries = contaminantValues["Hits_no_libraries"]  
             thisContam.save()
         except:
-            #not always hits no libs present, so check and assign depending on this
-            if "Hits_no_libraries" in contaminantValues:
-                currentHitsNoLibs = contaminantValues["Hits_no_libraries"]
-            else:
-                currentHitsNoLibs = None
-            thisContam  = ContaminantsDetails( \
-                                sample_id = sample_id, organism = organism, \
-                                percUnmapped = contaminantValues["Unmapped"], \
-                                oneHitOneLib = contaminantValues["One_hit_one_library"], \
-                                manyHitOneLib = contaminantValues["Multiple_hits_one_library"], \
-                                oneHitManyLib = contaminantValues["One_hit_multiple_libraries"], \
-                                manyHitManyLib = contaminantValues["Multiple_hits_multiple_libraries"], \
-                                hitsNoLibraries = currentHitsNoLibs ) 
-                
-            thisContam.save()
- 
+            print "Failed to get or create contaminants object for %s" % organism 
+            raise
 
 
 
 
 if __name__ == "__main__":
     #"""If the function is the main function, kick it into gear and run the script"""    
+    print ""
 
     #parse the arguements. Duh
     parser = argparse.ArgumentParser(prog='AlmostSignificant DataLoading', \
-                                    description='This script is for loading data from nextseq and hiseq DNA sequencing runs into AlmostSignificant.', version=version) 
-    parser.add_argument('runLocation', type=str, help='Location of processed sequencing run')
-    parser.add_argument('rawLocation', type=str, help='Location of raw from-machine sequencing run')
-    parser.add_argument('qCFolder', type=str, \
+                                    description='This script is for loading data from nextseq and hiseq DNA sequencing runs into AlmostSignificant.',\
+                                    version=version,\
+                                    epilog="If you require more help, please email j.x.ward@dundee.ac.uk.") 
+    parser.add_argument('parsedRunFolder', type=str, help='Location of processed sequencing run')
+    parser.add_argument('rawSequencingFolder', type=str, help='Location of raw from-machine sequencing run (including SampleSheet.csv)')
+    parser.add_argument('QCFolder', type=str, \
          help='Folder containing the output from fastQC and/or fastQScreen for each of the fastq files in the run')
     parser.add_argument('-m', '--machineType', default="nextseq", choices=['hiseq','nextseq'],\
          help='Set the machine type. Accepts hiseq or nextseq. By default assumes %(default)s runs')
@@ -1638,8 +1713,69 @@ if __name__ == "__main__":
     #gather the arguements
     args = parser.parse_args()
 
+    #validate all of the paths given.
+    #run folder
+    if not os.path.isdir(args.parsedRunFolder):
+        print "Run path doesn't exist; this should be the output folder from bcl2fastq"
+        sys.exit(1)
+    #check undet read files exists if checkUndets is flagged - hiseq
+    elif args.machineType.lower() == "hiseq" and not os.path.isdir("/".join([args.parsedRunFolder,"Undetermined_indices"])) and args.checkUndet:
+        print "Check indicies is flagged but no undetermined indicies folder found for the run. Ignoring option."
+    #check undet read files exists if checkUndets is flagged - nextseq
+    elif args.machineType.lower() == "nextseq" and not os.path.exists("/".join([args.parsedRunFolder,"Undetermined_S0_L001_R1_001.fastq.gz"])) and args.checkUndet:
+        print "Check indicies is flagged but no undetermined indicies files found for the run. Ignoring option."
+    #md5 file suggestion 
+    elif not os.path.exists("/".join([args.parsedRunFolder,"md5hashes.txt"])):
+        print "Note: If md5 hashes for the fastq files are placed in a file named 'md5hashes.txt' in %s, then almostSignificant will store the md5 hash for each of the files" % args.parsedRunFolder
+
+    #raw folder
+    if not os.path.isdir(args.rawSequencingFolder):
+        print "Raw data path doesn't exist; this should be the output folder from the sequencing machine"
+        sys.exit(1)
+        #a better way migth be to do os.listdir() and search for interop, runparameters and sample sheet. Can do this case insensitive then?
+    #check the interop folder exists
+    elif not os.path.isdir("/".join([args.rawSequencingFolder,"InterOp"])):
+        print "InterOp folder not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( "/".join([args.rawSequencingFolder,"InterOp"]), args.machineType )
+        sys.exit(1)
+    #check run parameters exists
+    elif not os.path.exists("/".join([args.rawSequencingFolder, "runParameters.xml"])) and args.machineType.lower() == "hiseq":
+        print "runParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
+        print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
+        sys.exit(1)
+    elif not os.path.exists("/".join([args.rawSequencingFolder,"RunParameters.xml"])) and args.machineType.lower() == "nextseq":
+        print "RunParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
+        print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
+        sys.exit(1)
+    #samplesheet existence check
+    elif not os.path.exists("/".join([args.rawSequencingFolder, "SampleSheet.csv"])) and not os.path.exists("/".join([args.rawSequencingFolder,"sampleSheet.csv"])):
+        print "SampleSheet.csv not found at %s. Please have the Sample Sheet for the run present in the from-sequencer folder (named SampleSheet.csv)." 
+        sys.exit(1)
+    
+
+    #fastqc folder existance check
+    if not os.path.isdir(args.QCFolder):
+        print "QC Folder doesn't exist; this should be a folder containing FastQC results (zip and optionally folder) for all of the fastq files"
+        sys.exit(1)
+
+    #check for pdflatex?
+    try:
+        FNULL = open(os.devnull, 'w')
+        subprocess.call(["pdflatex","--version"], stdout=FNULL, stderr=subprocess.STDOUT)
+        FNULL.close()
+    except:
+        print "Cannot run pdflatex. Is it installed?"
+        raise
+
+    #check for pdfGenerator.sh
+    #really this will have to be done when the install script is made!
+#    try:
+#        subprocess.call(["pdfGenerator.sh","--help"])
+#    except:
+    
+
+
     #print (args.runLocation, args.rawLocation, args.qCFolder, args.machineType, args.checkUndet )
-    addNextSeqRun( args.runLocation, args.rawLocation, args.qCFolder, machineType=args.machineType, checkUndetIndicies=args.checkUndet )
+    addNextSeqRun( args.parsedRunFolder, args.rawSequencingFolder, args.QCFolder, machineType=args.machineType, checkUndetIndicies=args.checkUndet )
     
 
 
