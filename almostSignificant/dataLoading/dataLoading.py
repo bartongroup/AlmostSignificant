@@ -46,66 +46,6 @@ def openFileReadLines( targetFile ):
     return targetFileLines
 
 
-def parseOldSampleSheet( sampleSheetLocation ):
-    """Parses all of the details from the sampleSheet for a run given the input sample sheet location
-
-        Deprecated in favour of parseHiseqSampleSheet
-
-        Takes the location of the sample sheet as input and creates a dictionary.
-        Dictionary is in the format.
-        ["SampleID"]["Sample","Reference","FCID","Lane","Barcode","Description",
-                                            "Control", "Recipe","Operator","Project"]
-
-    """
-
-   
-    #load data from the file 
-    try:
-        print "Parsing Sample Sheet File %s" % sampleSheetLocation
-        sampleSheetLines = openFileReadLines( sampleSheetLocation )
-    except IOError:
-        print "Sample Sheet Parsing Failed"
-        raise
-    except:
-        print("Unexpected Error parsing sample sheet:", sys.exc_info()[0]) 
-        raise
-   
-
-    #loop over all of the entries,creating a dict with an entry for each sample
-    sampleSheetDict = {}
-    #    Key - SampleID
-    #        0 Sample Reference
-    #        1 FCID
-    #        2 Lane
-    #        3 Barcode
-    #        4 Description
-    #        5 Control
-    #        6 Recipe
-    #        7 Operator
-    #        8 Project
-    sampleSheetLines.pop(0)
-    for line in sampleSheetLines:
-        sampleDetails = line.split(",")
-        #default hiseq 2000 sample sheet.
-        #FCID,Lane,SampleID,SampleRef,Index,Description,Control,Recipe,Operator,Project
-        #This isn't the most concise way of doing this, but it's by far the clearest
-        sampleID = sampleDetails[2]
-        sampleReference = sampleDetails[3]
-        FCID = sampleDetails[0]
-        lane = sampleDetails[1]
-        barcode = sampleDetails[4]
-        description = sampleDetails[5]
-        control = sampleDetails[6]
-        recipe = sampleDetails[7]
-        operator = sampleDetails[8]
-        project = sampleDetails[9]
-
-        sampleSheetDict[ sampleID ] = [ FCID, lane, barcode, description, control, 
-                                        recipe, operator, project ]
-
-    return( sampleSheetDict )
-
-
 def parseNextseqSampleSheet( sampleSheetLocation ):
     """Returns a dictionary containing all the data in the given sample sheet
 
@@ -1001,6 +941,7 @@ def generateLatexFile( sampleName, destinationFolder, fastQCFolder, runName, q30
     """Generates pdf summary files for the sample, given the fastQC folder location
 
     """
+    print "%s, %s, %s, %s, %s" %(sampleName, destinationFolder,fastQCFolder, runName, q30Length)
     #eventually and ideally this will just be written in python.
     #for now though, we'll just use what we've got in bash. 
     pdfGeneratorScript = "pdfGenerator.sh"
@@ -1148,6 +1089,7 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     
     runName = rawLocation.split("/")[-2]
     machineName, flowCellID = runName.split("_")[1:3]
+    print "Run Name %s" %runName
     #gather the information from the sample sheet
     sampleSheetLocation = "/".join([rawLocation,"SampleSheet.csv"])
 
@@ -1320,6 +1262,7 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     #print sampleSheetData["Data"]
     #loop over each sample in the samplesheet
     #print sampleSheetData["Data"]
+    print "got here"
     for currentSampleName, currentSample in sampleSheetData["Data"].iteritems():
         print "Adding sample %s (%i/%i)." %( currentSampleName, counter, len(sampleSheetData["Data"]) )
         counter = counter+1
@@ -1340,14 +1283,18 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
         sampleData["barcode"] = currentSample["index"] # ss
         #find the location in the run folder for the project
         #now defined in the machine checking section at the start
-        if machineType == "NextSeq":
+        if machineType.lower() == "nextseq":
             projectFolder = "".join([runLocation, currentSample["Sample_Project"]])
-        elif machineType == "HiSeq":
+        elif machineType.lower() == "hiseq":
             projectFolder = "".join([runLocation, "Project_", currentSample["Sample_Project"]])
+        print "and here"
         #loop over every file in the folder
         #need to add to AS here as it deals with lanes and read number
         for root, dirs, fastqFiles in os.walk( projectFolder ):
+            print "hit the for loop 1"
             for fastqFile in fastqFiles:
+                print "hit the for loop 2"
+                print "%s" % fastqFile
                 #Illumina. Why. You replace all of the _ in sample names with -. 
                 #This wouldn't be so bad, but fastqc and illumina then add more _ into the name
                 #which bones over my searches and makes my life harder. 
@@ -1381,6 +1328,7 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
                                                 sampleData["thisLane"],\
                                                 sampleData["readNumber"])
                         for currentQCFile in allQCFiles:
+                            print "%s:%s" %(currentQCFile, fastQCZipName)
                             if fnmatch.fnmatch(currentQCFile, fastQCZipName):
                                 #parse the fastqc results. 
                                 currentFastQCZip = loadFastQCZip( "%s/%s" %( root, currentQCFile ) )
@@ -1727,11 +1675,13 @@ if __name__ == "__main__":
     #md5 file suggestion 
     elif not os.path.exists("/".join([args.parsedRunFolder,"md5hashes.txt"])):
         print "Note: If md5 hashes for the fastq files are placed in a file named 'md5hashes.txt' in %s, then almostSignificant will store the md5 hash for each of the files" % args.parsedRunFolder
-
     #raw folder
     if not os.path.isdir(args.rawSequencingFolder):
         print "Raw data path doesn't exist; this should be the output folder from the sequencing machine"
         sys.exit(1)
+    elif not re.match("\d{6}_\w+_\d{4}_\w+",os.path.basename(args.rawSequencingFolder.strip("/"))):
+        print "Raw sequencing folder doesn't match the pattern <data>_<sequencerID>_<runNumber>_<flowcellID>. This should be the output run folder from the sequencing machine".
+        sys.exit()
         #a better way migth be to do os.listdir() and search for interop, runparameters and sample sheet. Can do this case insensitive then?
     #check the interop folder exists
     elif not os.path.isdir("/".join([args.rawSequencingFolder,"InterOp"])):
