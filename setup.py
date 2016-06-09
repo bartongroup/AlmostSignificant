@@ -11,7 +11,7 @@ setup(
     name='django-almostSignificant',
     version='0.0513',
     packages=['almostSignificant'],
-    install_requires=['django>=1.7','illuminate'],
+    install_requires=['django','illuminate'],
     include_package_data=True,
     license='MIT',  # example license
     description='A django app for streamlining DNA sequencing QC and information storage.',
