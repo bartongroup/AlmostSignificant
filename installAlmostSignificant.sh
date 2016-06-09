@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 #AlmostSignificant Install script
 
 #check the the first arg is the install folder and is actually a folder
@@ -33,106 +33,106 @@ if [[ ! -d $installFolder ]]; then
 		printf '\n Cannot create install folder $installFolder\n' 
 		printHelp
 	fi
-elif [[ ! -w $installFolder ]]; then
-	echo "Cannot write to $installFolder" 
-	printHelp
-else
-	cd $installFolder
-	touch $installLog	
-	#set virtualenv folder 
-	which virtualenv | tee $installLog #dependency
-	if [[ $? -ne 0 ]]; then
-		echo "Virtualenv not found. Please install virtualenv. (e.g. sudo apt-get install python-virtualenv )."
-		exit 1
-	fi
-	
-	virtualenv almostSignificant  | tee -a $installLog
-	cd almostSignificant
-	currentDir=$(pwd)
-	
-	source bin/activate
-	
-	#load almost significant into the lib folder of this
-	./bin/pip install $scriptDir/almostSignificant.tar.gz | tee -a $installLog
-	
-	if [[ $? -ne 0 ]]; then #dependency
-		#virtualenv bug, trying the hard way. 
-		printf "\nFailed to install almostSignificant using pip. Trying to work around the virtualenv bug...\n\n" | tee -a $installLog
-		#wget https://bootstrap.pypa.io/get-pip.py | tee -a $installLog
-		python $scriptDir/get-pip.py | tee -a $installLog
-		./bin/pip install $scriptDir/almostSignificant.tar.gz | tee -a $installLog
-
-		if [[ $? -ne 0 ]]; then
-			echo "Failed to install almostSignificant in the virtual environment. Please see the error message produced by pip. Is python-dev installed?"
-			exit 1
-		fi
-	fi
-
-	#initiate django instance 
-	django-admin startproject ASServer | tee -a $installLog
-	#change files as per install instructions.
-	
-	#THIS
-	#settings
-		#installed apps
-		sed -i "/INSTALLED_APPS = \[/a \ \ \ \ 'almostSignificant'," ASServer/ASServer/settings.py
-		#static root
-		mkdir $currentDir/ASServer/ASServer/static/
-		echo "STATIC_ROOT = '$currentDir/ASServer/ASServer/static/'" >> ASServer/ASServer/settings.py
-		#media root
-		mkdir $currentDir/ASServer/ASServer/media/
-		echo "MEDIA_ROOT = '$currentDir/ASServer/ASServer/media/'" >> ASServer/ASServer/settings.py
-		#media url
-		echo "MEDIA_URL = '/media/'" >> ASServer/ASServer/settings.py
-		#templates
-		sed -i "/'context_processors': \[/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 'django.core.context_processors.static'," ASServer/ASServer/settings.py
-		
-	#urls
-		#imports
-		sed -i "/from django.contrib import admin/a from almostSignificant import urls as as_urls" ASServer/ASServer/urls.py
-		sed -i "/from django.contrib import admin/a from django.conf.urls import include" ASServer/ASServer/urls.py
-		sed -i "/from django.contrib import admin/a from django.conf.urls.static import static" ASServer/ASServer/urls.py
-		sed -i "/from django.contrib import admin/a from django.contrib.staticfiles.urls import staticfiles_urlpatterns" ASServer/ASServer/urls.py
-		sed -i "/from django.contrib import admin/a from django.conf import settings" ASServer/ASServer/urls.py
-		sed -i "/from django.contrib import admin/a from django.views.generic.base import RedirectView" ASServer/ASServer/urls.py
-		#urls lines
-		sed -i "/urlpatterns = \[/a \ \ \ \ url(r'^$', RedirectView.as_view(url='/almostSignificant/', permanent=False), name='index')," ASServer/ASServer/urls.py
-		sed -i "/urlpatterns = \[/a \ \ \ \ url(r'^almostSignificant/', include(as_urls))," ASServer/ASServer/urls.py
-		#static patterns
-		echo "urlpatterns += staticfiles_urlpatterns()" >> ASServer/ASServer/urls.py
-		echo "urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)" >> ASServer/ASServer/urls.py
-	
-	#migrations
-	#python ASServer/manage.py migrate #might need to do this first, or syncdb?
-	printf "Setting up Django server.\n\n"
-	python ASServer/manage.py makemigrations almostSignificant >> $installLog
-	python ASServer/manage.py migrate >> $installLog
-	#collectstatic
-	python ASServer/manage.py collectstatic --noinput >> $installLog 
-	
-	
-	#install dataloading
-	cp -v $scriptDir/dataLoading.py ./bin/ >> $installLog
-	if [[ $? -ne 0 ]]; then
-		echo "Failed to move dataLoading.py from $scriptDir to $pwd/bin" | tee -a $installLog
-		exit 1
-	fi
-	#install pdfgenerator
-	cp -v $scriptDir/pdfGenerator.sh ./bin/ >> $installLog
-	if [[ $? -ne 0 ]]; then
-		echo "Failed to move pdfGenerator.sh from $scriptDir to $pwd/bin" | tee -a $installLog
-		exit 1
-	fi
-	
-	#check for 
-		#pdflatex and modules needed?
-		#checkfiles
-	
-	#boot into djangoServer	
-		#check for anything running on port 8000?
-	#create file for launching the server just using sh runAlmostSignificant.sh
-	touch ./bin/runAlmostSignificant.sh
-	printf "#!/bin/bash\nsource $(pwd)/bin/activate\npython $(pwd)/ASServer/manage.py runserver" > ./bin/runAlmostSignificant.sh
-	echo ""
-	echo "Finished loading almostSignificant. Run using 'sh $(pwd)/bin/runAlmostSignificant.sh'." | tee -a $installLog
 fi
+#elif [[ ! -w $installFolder ]]; then
+#	echo "Cannot write to $installFolder" 
+#	printHelp
+cd $installFolder
+touch $installLog	
+#set virtualenv folder 
+which virtualenv | tee $installLog #dependency
+if [[ $? -ne 0 ]]; then
+	echo "Virtualenv not found. Please install virtualenv. (e.g. sudo apt-get install python-virtualenv )."
+	exit 1
+fi
+
+virtualenv almostSignificant  | tee -a $installLog
+cd almostSignificant
+currentDir=$(pwd)
+
+source bin/activate
+
+#load almost significant into the lib folder of this
+./bin/pip install $scriptDir/django-almostSignificant*.tar.gz | tee -a $installLog
+
+if [[ $? -ne 0 ]]; then #dependency
+	#virtualenv bug, trying the hard way. 
+	printf "\nFailed to install almostSignificant using pip. Trying to work around the virtualenv bug...\n\n" | tee -a $installLog
+	#wget https://bootstrap.pypa.io/get-pip.py | tee -a $installLog
+	python $scriptDir/get-pip.py | tee -a $installLog
+	./bin/pip install $scriptDir/django-almostSignificant*.tar.gz | tee -a $installLog
+
+	if [[ $? -ne 0 ]]; then
+		echo "Failed to install almostSignificant in the virtual environment. Please see the error message produced by pip. Is python-dev installed?"
+		exit 1
+	fi
+fi
+
+#initiate django instance 
+django-admin startproject ASServer | tee -a $installLog
+#change files as per install instructions.
+
+#THIS
+#settings
+	#installed apps
+	sed -i "/INSTALLED_APPS = \[/a \ \ \ \ 'almostSignificant'," ASServer/ASServer/settings.py
+	#static root
+	mkdir $currentDir/ASServer/ASServer/static/
+	echo "STATIC_ROOT = '$currentDir/ASServer/ASServer/static/'" >> ASServer/ASServer/settings.py
+	#media root
+	mkdir $currentDir/ASServer/ASServer/media/
+	echo "MEDIA_ROOT = '$currentDir/ASServer/ASServer/media/'" >> ASServer/ASServer/settings.py
+	#media url
+	echo "MEDIA_URL = '/media/'" >> ASServer/ASServer/settings.py
+	#templates
+	sed -i "/'context_processors': \[/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 'django.core.context_processors.static'," ASServer/ASServer/settings.py
+	
+#urls
+	#imports
+	sed -i "/from django.contrib import admin/a from almostSignificant import urls as as_urls" ASServer/ASServer/urls.py
+	sed -i "/from django.contrib import admin/a from django.conf.urls import include" ASServer/ASServer/urls.py
+	sed -i "/from django.contrib import admin/a from django.conf.urls.static import static" ASServer/ASServer/urls.py
+	sed -i "/from django.contrib import admin/a from django.contrib.staticfiles.urls import staticfiles_urlpatterns" ASServer/ASServer/urls.py
+	sed -i "/from django.contrib import admin/a from django.conf import settings" ASServer/ASServer/urls.py
+	sed -i "/from django.contrib import admin/a from django.views.generic.base import RedirectView" ASServer/ASServer/urls.py
+	#urls lines
+	sed -i "/urlpatterns = \[/a \ \ \ \ url(r'^$', RedirectView.as_view(url='/almostSignificant/', permanent=False), name='index')," ASServer/ASServer/urls.py
+	sed -i "/urlpatterns = \[/a \ \ \ \ url(r'^almostSignificant/', include(as_urls))," ASServer/ASServer/urls.py
+	#static patterns
+	echo "urlpatterns += staticfiles_urlpatterns()" >> ASServer/ASServer/urls.py
+	echo "urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)" >> ASServer/ASServer/urls.py
+
+#migrations
+#python ASServer/manage.py migrate #might need to do this first, or syncdb?
+printf "Setting up Django server.\n\n"
+python ASServer/manage.py makemigrations almostSignificant >> $installLog
+python ASServer/manage.py migrate >> $installLog
+#collectstatic
+python ASServer/manage.py collectstatic --noinput >> $installLog 
+
+
+#install dataloading
+cp -v $scriptDir/dataLoading.py ./bin/ >> $installLog
+if [[ $? -ne 0 ]]; then
+	echo "Failed to move dataLoading.py from $scriptDir to $pwd/bin" | tee -a $installLog
+	exit 1
+fi
+#install pdfgenerator
+cp -v $scriptDir/pdfGenerator.sh ./bin/ >> $installLog
+if [[ $? -ne 0 ]]; then
+	echo "Failed to move pdfGenerator.sh from $scriptDir to $pwd/bin" | tee -a $installLog
+	exit 1
+fi
+
+#check for 
+	#pdflatex and modules needed?
+	#checkfiles
+
+#boot into djangoServer	
+	#check for anything running on port 8000?
+#create file for launching the server just using sh runAlmostSignificant.sh
+touch ./bin/runAlmostSignificant.sh
+printf "#! /bin/bash\nsource $(pwd)/bin/activate\npython $(pwd)/ASServer/manage.py runserver" > ./bin/runAlmostSignificant.sh
+echo ""
+echo "Finished loading almostSignificant. Run using 'bash $(pwd)/bin/runAlmostSignificant.sh'." | tee -a $installLog
+

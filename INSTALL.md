@@ -5,135 +5,24 @@ AlmostSignificant
 AlmostSignificant is a platform to simplifying the quality control checks of Illumina HiSeq and
 NextSeq sequencing runs. More detailed information is available in the docs folder.
 
-Requires python 2.7, the illuminate package (available via pip install illuminate), and django >1.7 and pdflatex. 
+Requires python 2.7, the illuminate package (available via pip install illuminate), and django >1.7 and pdflatex.
+The install script requires the python package virtualenv as well. 
 
 Start
 -----------
-1.  After obtaining the gz file for almostSignificant, install it either globally, or into a folder that is readable by apache:
-        `pip install --user django-almostSignficant*.gz #local install`
-        `pip install django-almostSignificant*.gz #global install. Likely requires root`
-    (NOTE: At writing, installing the illuminate dependency appears to produce a lot of errors, but install completes sucessfully. I'm unsure why this is.)
+Download the AlmostSignificant.tar.gz file and extract it:
+	`tar -xvf AlmostSignificant.tar.gz`
+then move to the directory created:
+	`cd AlmostSignificant-*`
 
-    Check pdflatex is installed. If it isn't, obtain it via the usual methods for your distro (available in the texlive package):
-        `pdflatex --version`
-    NOTE: If you find that the pdf summaries are not produced, it's likely pdflatex isn't installed and on your path.
+Run the install script, installAlmostSignificant.sh, with the arguement being the folder you want to create the AlmostSignificant server in, for example: 
+	`bash installAlmostSignificant.sh AlmostSignificantServer`
 
-2.  Setup a new Django project:
-        `django-admin startproject ASTest`
-    This creates a folder in your current location called ASTest. Where you see /path/to/ASTest is seen you need to replace this with the path to the project that was just created.
+This should run through, creating a virtual environment for the server, setting up django and any required dependencies, and lovating the dataLoading scripts into the bin folder of the virtual environment. 
 
-    Make sure that this new location is in your pythonpath:
-        `export PYTHONPATH=/path/to/ASTest/:$PYTHONPATH`
-    You can make this permanent by adding this line to your ~/.bashrc file, so that it is set whenever you launch your terminal.
-
-3.  Add "almostSignficant" to the 'installed_apps' section of settings.py in the new project. 
-    Settings.py is located in /path/to/ASTest/ASTest/:
-        '''
-			INSTALLED_APPS = (
-            ...
-            'almostSignificant',
-        )
-		'''
-    
-    Add locations to handle media and static files. This location must be writable by apache:
-        `STATIC_ROOT = '/path/to/ASTest/ASTest/static/'`
-        `MEDIA_ROOT = '/path/to/ASTest/ASTest/media/'`
-
-    Ensure:
-        `'django.core.context_processors.request',`
-    and:
-        `'django.core.context_processors.static',`
-    are in the 'context_processors' subsection of the TEMPLATES section, e.g.:
-        '''
-			TEMPLATES = [
-            {
-            ...
-                    'context_processors': [
-                        'django.template.context_processors.debug',
-                        'django.template.context_processors.request',
-                        'django.template.context_processors.static',
-                        'django.contrib.auth.context_processors.auth',
-                        'django.contrib.messages.context_processors.messages',
-            ...
-		'''
-
-4.  Add the following line to urls.py.
-    urls.py is located in /path/to/ASTest/ASTest/::
-        `from almostSignificant import urls as as_urls`
-    and the following to urlpatterns in urls.py::
-        `url(r'^almostSignificant/', include(as_urls)),`
-    e.g.:
-		'''
-        urlpatterns = [
-            url(r'^admin/', include(admin.site.urls)),
-            url(r'^almostSignificant/', include(as_urls)),
-        ]
-		'''
-    Add `include` to the imported functions from django.conf.urls::
-        `from django.conf.urls import url, include`
-          
-    Note: If later you have problems with CSS files not loading, add these to the end of urls.py::
-		'''
-        from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-        urlpatterns += staticfiles_urlpatterns()
-		'''
-
-    
-
-5.  Start the project. From the project folder created in (2)::
-        `python manage.py migrate`
-        `python manage.py makemigrations almostSignificant`
-        `python manage.py migrate almostSignificant`
-    and collect the static files we need::
-        `python manage.py collectstatic`
-    You will be asked if you want to delete the current static files. Select 'yes'
-
-6a. BASIC:Launch the server using the built in service provided by django::
-        `python /path/to/ASTest/manage.py runserver`
-    This command should indicate the address to go to using a browser to view almostSignificant; the default is 127.0.0.1:8000/almostSignificant/.
-
-6b. ADVANCED:Setup the apache server on your target machine. Advice on this is beyond the scope of this readme, but below is an example of the config I use for apache2 when testing almostSignificant. 
-    001-almostSignficant.conf:
-        
-    <VirtualHost *:8080>
-    
-    	ServerAdmin webmaster@localhost
-    	DocumentRoot /home/User/djangoProjects/astest/astest
-    
-    	ErrorLog ${APACHE_LOG_DIR}/error.log
-    	CustomLog ${APACHE_LOG_DIR}/access.log combined
-    
-    	Alias /static/ /home/User/Public/astest/astest/static/
-    	Alias /media/ /home/User/Public/astest/astest/media/
-    
-    	<Directory /home/User/Public/astest/astest/static>
-    		Options Indexes FollowSymLinks
-    		AllowOverride None
-    		Require all granted
-    	</Directory>
-    	<Location "/static/">
-    		Options -Indexes
-    	</Location>
-    
-    	<Directory /home/User/Public/astest/astest/media>
-    		Require all granted
-    	</Directory>
-    
-    	<Directory /home/User/Public/astest/astest>
-    		<Files wsgi.py>
-    			Require all granted
-    		</Files>
-    	</Directory>
-    
-    	WSGIDaemonProcess almostSignificant python-path=/home/User/Public/astest:/home/User/Public/astest/astest:/home/User/.local/lib/python2.7/site-packages:/usr/lib/python2.7
-    	WSGIProcessGroup almostSignificant
-    	WSGIScriptAlias / /home/User/Public/astest/astest/wsgi.py
-    	
-    	
-    </VirtualHost>
-
-
-
+When finished, the django server can be launched by running the runAlmostSignificant.sh script located in the bin folder, e.g.:
+	`bash bin/runAlmostSignificant.sh` 
+and then navigating to 127.0.0.8000 in a browser (though this may be different. The script should inform you of it's address.
 DataLoading
 ----------
 
