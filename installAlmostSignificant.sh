@@ -23,6 +23,8 @@ function printHelp {
 	printf 'The first, and only, arguement for this script is the folder that almostSignificant is to be installed in.\n\n'
 	printf 'Stages of this script are:\nSetup a virtualenv folder.\nInstall almostSignificant into the virtualenv.\n'
 	printf 'Setup django.\nConfigure Django.\nInstall the data loading scripts.\n\n'
+	printf 'It is required to have python-dev, python-virtualenv, and some form of pdflatex (eg texlive package) installed.\n'
+	printf 'It is recommended to have python-numpy and python-pandas installed prior to running this script; there have been install issues when this is not the case.\n\n'
 	printf 'For more help, please contact jxward@dundee.ac.uk\n\n'
 	exit 1
 }
@@ -46,7 +48,7 @@ if [[ $? -ne 0 ]]; then
 	exit 1
 fi
 
-virtualenv almostSignificant  | tee -a $installLog
+virtualenv --system-site-packages almostSignificant  | tee -a $installLog
 cd almostSignificant
 currentDir=$(pwd)
 
@@ -114,13 +116,16 @@ python ASServer/manage.py collectstatic --noinput >> $installLog
 #install dataloading
 cp -v $scriptDir/dataLoading.py ./bin/ >> $installLog
 if [[ $? -ne 0 ]]; then
-	echo "Failed to move dataLoading.py from $scriptDir to $pwd/bin" | tee -a $installLog
+	echo "Failed to move dataLoading.py from $scriptDir to $(pwd)/bin" | tee -a $installLog
 	exit 1
 fi
+#fix a pythonpath issue
+sed -i "/import argparse/a sys.path.append('$(pwd)/ASServer/')" bin/dataLoading.py
+sed -i "/import argparse/a sys.path.append('$(pwd)/ASServer/ASServer/')" bin/dataLoading.py
 #install pdfgenerator
 cp -v $scriptDir/pdfGenerator.sh ./bin/ >> $installLog
 if [[ $? -ne 0 ]]; then
-	echo "Failed to move pdfGenerator.sh from $scriptDir to $pwd/bin" | tee -a $installLog
+	echo "Failed to move pdfGenerator.sh from $scriptDir to $(pwd)/bin" | tee -a $installLog
 	exit 1
 fi
 

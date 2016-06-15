@@ -893,17 +893,27 @@ def buildContaminantsTable(sampleData):
                     <th>%ManyHits</br>OneLibrary</th><th>%OneHitMany</br>Libraries</th> \
                     <th>%ManyHits</br>ManyLibraries</th>'
     
-    contaminantsDetails = ContaminantsDetails.objects.filter(sample_id=sampleData.id)
-    rightTable = rightTable + '<h1>Contaminants Details</h1><br><p>Hits no library: %s%%</p>' \
-                        % contaminantsDetails[0].hitsNoLibraries
-    rightTable = rightTable + rightHeaders
-    for curOrganism in contaminantsDetails:
-        currentLine = '<tr><td>%s</td><td>%.2f%%</td> \
-                           <td>%.2f%%</td><td>%.2f%%</td><td>%.2f%%</td></tr>' \
-                       %( curOrganism.organism, curOrganism.oneHitOneLib, \
-                          curOrganism.manyHitOneLib, curOrganism.oneHitManyLib, \
-                          curOrganism.manyHitManyLib) 
+    try:
+        contaminantsDetails = ContaminantsDetails.objects.filter(sample_id=sampleData.id)
+        rightTable = rightTable + '<h1>Contaminants Details</h1><br><p>Hits no library: %s%%</p>' \
+                            % contaminantsDetails[0].hitsNoLibraries
+        rightTable = rightTable + rightHeaders
+        for curOrganism in contaminantsDetails:
+            currentLine = '<tr><td>%s</td><td>%.2f%%</td> \
+                               <td>%.2f%%</td><td>%.2f%%</td><td>%.2f%%</td></tr>' \
+                           %( curOrganism.organism, curOrganism.oneHitOneLib, \
+                              curOrganism.manyHitOneLib, curOrganism.oneHitManyLib, \
+                              curOrganism.manyHitManyLib) 
+            rightTable = rightTable + currentLine
+    except:
+        rightTable = rightTable + '<h1>Contaminants Details</h1><br><p>Hits no library: %s%%</p>' \
+                            % "-" 
+        rightTable = rightTable + rightHeaders
+        currentLine = '<tr><td>%s</td><td>%s</td> \
+                           <td>%s</td><td>%s</td><td>%s</td></tr>' \
+                       %( "-", "-", "-", "-", "-") 
         rightTable = rightTable + currentLine
+
 
     rightTable = rightTable + '</table>'
     returnString = '<div class="dsetsummary">%s</div>' \

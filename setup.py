@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-almostSignificant',
-    version='0.0513',
+    version='0.054',
     packages=['almostSignificant'],
     install_requires=['django','illuminate'],
     include_package_data=True,

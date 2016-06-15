@@ -23,7 +23,7 @@ django.setup()
 import settings
 from  almostSignificant.models import *
 
-version = "0.051"
+version = "0.054"
 
 
 def openFileReadLines( targetFile ):
@@ -705,7 +705,9 @@ def parseNextSeqRunParameters( runParametersLocation ):
         raise
 
     runParametersDict = {} 
-    runParametersSetup = runParameters[1]
+    for setup in runParameters.findall("Setup"):
+    #runParametersSetup = runParameters[1]
+        runParametersSetup = setup
         
 
     #length of the run
@@ -737,6 +739,77 @@ def parseNextSeqRunParameters( runParametersLocation ):
     #basespacerunId
     for basespace in runParameters.iterfind("BaseSpaceRunID"):
         runParametersDict["BaseSpaceRunID"] = basespace.text
+   
+    return runParametersDict
+
+def parseMiSeqRunParameters( runParametersLocation ):
+    """Parses the runParameters.xml file created by the miseq run to get some 
+        essential details from it.a Input is the run Folder for a run.
+
+        I'm really not expecting to ever need a lot of the data this provides.
+        I collect it because why not? Metadata might be useful one day, even
+        if it isn't, what's a few bytes, eh?
+    
+        Return dictionary keys:
+        RTAVersion
+        cameraDriver
+        cameraFirmware
+        sbsReagentKit
+        peReagentKit
+        indexReagentKit
+        washBarcode
+        controlSoftware
+        FCPosition
+        chemistryVersion
+        length
+        
+    """
+
+#    runParametersLine = openFileReadLines( runParametersLocation )
+
+    try:
+        print "Parsing Run Parameters"
+        runParametersXML = ElementTree.parse(runParametersLocation)
+        runParameters = runParametersXML.getroot()
+    except IOError:
+        print "Cannot load information from %s" % runParametersLocation
+        raise
+    except ElementTree.ParseError:
+        print "Invalid XML in %s" % runParametersLocation
+        raise
+
+    runParametersDict = {} 
+    for setup in runParameters.iterfind("Setup"):
+    #runParametersSetup = runParameters[1]
+        runParametersSetup = setup
+        
+    #software versions
+    #Version of the hiseq control software used
+    for child in runParametersSetup.iterfind("ApplicationVersion"):
+        runParametersDict["controlSoftware"] = child.text
+    #barcode for the wash flow cell.
+    for child in runParametersSetup.iterfind("SystemSuiteVersion"):
+        runParametersDict["SystemSuiteVersion"] = child.text
+    #chemistry version
+    for child in runParameters.iterfind("Chemistry"):
+        runParametersDict["Chemistry"] = child.text
+    #rta version
+    for child in runParameters.iterfind("RTAVersion"):
+        runParametersDict["RTAVersion"] = child.text
+    
+    #get the kit serials
+    for bottleRFID in runParameters.iterfind("PR2BottleRFIDTag"):
+        runParametersDict["PR2BottleSerial"] = bottleRFID.find("SerialNumber").text
+    for reagentRFID in runParameters.findall("ReagentKitRFIDTag"):
+        runParametersDict["ReagentKitSerial"] = reagentRFID.find("SerialNumber").text
+    
+    #paired end or not
+    for Reads in runParameters.iterfind("Reads"):
+        if len(Reads) < 3:
+            runParametersDict["pairedSingle"] = "single"
+        else:
+            runParametersDict["pairedSingle"] = "paired"
+        runParametersDict["length"] = Reads[0].attrib["NumCycles"] 
    
     return runParametersDict
 
@@ -941,7 +1014,6 @@ def generateLatexFile( sampleName, destinationFolder, fastQCFolder, runName, q30
     """Generates pdf summary files for the sample, given the fastQC folder location
 
     """
-    print "%s, %s, %s, %s, %s" %(sampleName, destinationFolder,fastQCFolder, runName, q30Length)
     #eventually and ideally this will just be written in python.
     #for now though, we'll just use what we've got in bash. 
     pdfGeneratorScript = "pdfGenerator.sh"
@@ -1057,7 +1129,7 @@ def moveFileToMediaFolder( filePath, destinationFolder ):
 ################################################################################
 
 #Add NextSeq run to AlmostSignificant
-def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkUndetIndicies=False):
+def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkUndetIndicies=False):
     """Add a nextSeq run to AlmostSignificant
     First arguement is the bcl2fastq output folder
     Second arguement is the location for the raw data from the machine, including
@@ -1088,7 +1160,11 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
             
     
     runName = rawLocation.split("/")[-2]
-    machineName, flowCellID = runName.split("_")[1:3]
+    if machineType.lower() == "miseq":
+        machineName = runName.split("_")[1]
+        flowCellID = runName.split("-")[-1]
+    else:  
+        machineName, flowCellID = runName.split("_")[1:3]
     print "Run Name %s" %runName
     #gather the information from the sample sheet
     sampleSheetLocation = "/".join([rawLocation,"SampleSheet.csv"])
@@ -1131,6 +1207,21 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
         except:
             print "Failed to load run into AlmostSignificant"
             raise
+    elif machineType.lower() == "miseq":
+        #miseq data gathering. Illumina, I hate you. Why do you make them all different? Where's my meta-data?
+        try:
+            sampleSheetData = parseNextseqSampleSheet(sampleSheetLocation) #same as nextseq!
+            machineType = "MiSeq"
+            runParameters = parseMiSeqRunParameters( "".join([rawLocation,"RunParameters.xml"]) )#check if same as nextseq or I need to write another parser
+            softwareToAdd = [ "RTAVersion", "PR2BottleSerial", "controlSoftware", \
+                                "ReagentKitSerial", "Chemistry"] #check for software stuff
+            length = runParameters["length"]
+            pairedSingle = runParameters["pairedSingle"]
+            FCPosition = "A"
+            seqLanes = [1]
+        except:
+            print "Failed to load run into AlmostSignificant"
+            raise 
     else:
         #throw a tantrum
         print "InputMachineType of %s not elegible. Please use nextseq (default) or hiseq" % machineType
@@ -1176,6 +1267,9 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
             elif machineType == "HiSeq":
                 currentUndetFile = "%s/Undetermined_indices/Sample_lane%s/lane%s_Undetermined_L00%s_R1_001.fastq.gz" \
                                                                 % (runLocation, currentLane, currentLane, currentLane )
+            elif machineType == "MiSeq":
+                currentUndetFile = "%s/Data/Intensities/BaseCalls/Undetermined_S0_L00%s_R1_001.fastq.gz" \
+                                                                % (runLocation, currentLane)
             #if the file exists
             if os.path.exists( currentUndetFile ):
                 #run parseUndeterminedReads and add it to the undetIndiciesForRun array under the lane num
@@ -1262,7 +1356,6 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
     #print sampleSheetData["Data"]
     #loop over each sample in the samplesheet
     #print sampleSheetData["Data"]
-    print "got here"
     for currentSampleName, currentSample in sampleSheetData["Data"].iteritems():
         print "Adding sample %s (%i/%i)." %( currentSampleName, counter, len(sampleSheetData["Data"]) )
         counter = counter+1
@@ -1287,14 +1380,12 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
             projectFolder = "".join([runLocation, currentSample["Sample_Project"]])
         elif machineType.lower() == "hiseq":
             projectFolder = "".join([runLocation, "Project_", currentSample["Sample_Project"]])
-        print "and here"
+        elif machineType.lower() == "miseq":
+            projectFolder = "".join([runLocation, "Data/Intensities/BaseCalls/"])
         #loop over every file in the folder
         #need to add to AS here as it deals with lanes and read number
         for root, dirs, fastqFiles in os.walk( projectFolder ):
-            print "hit the for loop 1"
             for fastqFile in fastqFiles:
-                print "hit the for loop 2"
-                print "%s" % fastqFile
                 #Illumina. Why. You replace all of the _ in sample names with -. 
                 #This wouldn't be so bad, but fastqc and illumina then add more _ into the name
                 #which bones over my searches and makes my life harder. 
@@ -1328,7 +1419,6 @@ def addNextSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", ch
                                                 sampleData["thisLane"],\
                                                 sampleData["readNumber"])
                         for currentQCFile in allQCFiles:
-                            print "%s:%s" %(currentQCFile, fastQCZipName)
                             if fnmatch.fnmatch(currentQCFile, fastQCZipName):
                                 #parse the fastqc results. 
                                 currentFastQCZip = loadFastQCZip( "%s/%s" %( root, currentQCFile ) )
@@ -1420,7 +1510,9 @@ def addRunToDatabase( runData ):
     print "Adding the run to the database."
     try:
         #print runData["runName"]
-        thisRun, created = Run.objects.get_or_create(runName=runData["runName"])
+        thisRun, created = Run.objects.get_or_create(runName=runData["runName"], machine=runData["machine"],\
+            date=runData["date"],alias=runData["alias"],length=runData["length"],pairedSingle=runData["pairedSingle"],\
+            fcPosition=runData["fcPosition"])
         thisRun.machine = runData["machine"]
         thisRun.machineType = runData["machineType"]
         thisRun.date = runData["date"]
@@ -1649,11 +1741,13 @@ if __name__ == "__main__":
                                     description='This script is for loading data from nextseq and hiseq DNA sequencing runs into AlmostSignificant.',\
                                     version=version,\
                                     epilog="If you require more help, please email j.x.ward@dundee.ac.uk.") 
-    parser.add_argument('parsedRunFolder', type=str, help='Location of processed sequencing run')
-    parser.add_argument('rawSequencingFolder', type=str, help='Location of raw from-machine sequencing run (including SampleSheet.csv)')
+    parser.add_argument('parsedRunFolder', type=str,\
+         help='Location of processed sequencing run (required)')
     parser.add_argument('QCFolder', type=str, \
-         help='Folder containing the output from fastQC and/or fastQScreen for each of the fastq files in the run')
-    parser.add_argument('-m', '--machineType', default="nextseq", choices=['hiseq','nextseq'],\
+         help='Folder containing the output from fastQC and/or fastQScreen for each of the fastq files in the run (required)')
+    parser.add_argument('-r','--rawSequencingFolder', type=str, default=False, \
+        help='Location of raw from-machine sequencing run (including SampleSheet.csv). Required for HiSeq or NextSeq runs.')
+    parser.add_argument('-m', '--machineType', default="nextseq", choices=['hiseq','nextseq','miseq'],\
          help='Set the machine type. Accepts hiseq or nextseq. By default assumes %(default)s runs')
     parser.add_argument('-c', '--checkUndet', default="False", action="store_true",\
          help='Flag for parsing the undetermined indexes for a run. May take a few minutes to run, depending on the number of undetermined indexes and the number of lanes.')
@@ -1664,40 +1758,50 @@ if __name__ == "__main__":
     #validate all of the paths given.
     #run folder
     if not os.path.isdir(args.parsedRunFolder):
-        print "Run path doesn't exist; this should be the output folder from bcl2fastq"
+        print "Run path doesn't exist; this should be the output folder from bcl2fastq, or the MiSeq analysis folder."
         sys.exit(1)
-    #check undet read files exists if checkUndets is flagged - hiseq
-    elif args.machineType.lower() == "hiseq" and not os.path.isdir("/".join([args.parsedRunFolder,"Undetermined_indices"])) and args.checkUndet:
-        print "Check indicies is flagged but no undetermined indicies folder found for the run. Ignoring option."
+    #check that rawSequencingFolder is set if it's not a miseq run
+    elif args.machineType.lower() != "miseq" and args.rawSequencingFolder == False:
+        print "Any sequencing run that isn't a MiSeq run requires a raw sequencing folder as well as a processed folder"
+        sys.exit(1)
+
+    elif args.machineType.lower() == "miseq":
+        args.rawSequencingFolder = args.parsedRunFolder
+        if not os.path.exists("/".join([args.parsedRunFolder,"Data/Intensities/BaseCalls","Undetermined_S0_L001_R1_001.fastq.gz"])) and args.checkUndet:
+            print "Check indicies is flagged but no undetermined indicies files found for the run. Ignoring option."
+
+    elif args.machineType.lower() == "hiseq":
+        if not os.path.isdir("/".join([args.parsedRunFolder,"Undetermined_indices"])) and args.checkUndet:
+            print "Check indicies is flagged but no undetermined indicies folder found for the run. Ignoring option."
     #check undet read files exists if checkUndets is flagged - nextseq
-    elif args.machineType.lower() == "nextseq" and not os.path.exists("/".join([args.parsedRunFolder,"Undetermined_S0_L001_R1_001.fastq.gz"])) and args.checkUndet:
-        print "Check indicies is flagged but no undetermined indicies files found for the run. Ignoring option."
+        elif not os.path.exists("/".join([args.rawSequencingFolder, "runParameters.xml"])):
+            print "runParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
+            print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
+        sys.exit(1)
+
+    elif args.machineType.lower() == "nextseq":
+        if not os.path.exists("/".join([args.parsedRunFolder,"Undetermined_S0_L001_R1_001.fastq.gz"])) and args.checkUndet:
+            print "Check indicies is flagged but no undetermined indicies files found for the run. Ignoring option."
+        #check run parameters exists
+        elif not os.path.exists("/".join([args.rawSequencingFolder,"RunParameters.xml"])):
+            print "RunParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
+            print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
+            sys.exit(1)
+
     #md5 file suggestion 
-    elif not os.path.exists("/".join([args.parsedRunFolder,"md5hashes.txt"])):
+    if not os.path.exists("/".join([args.parsedRunFolder,"md5hashes.txt"])):
         print "Note: If md5 hashes for the fastq files are placed in a file named 'md5hashes.txt' in %s, then almostSignificant will store the md5 hash for each of the files" % args.parsedRunFolder
     #raw folder
-    if not os.path.isdir(args.rawSequencingFolder):
-        print "Raw data path doesn't exist; this should be the output folder from the sequencing machine"
-        sys.exit(1)
-    elif not re.match("\d{6}_\w+_\d{4}_\w+",os.path.basename(args.rawSequencingFolder.strip("/"))):
-        print "Raw sequencing folder doesn't match the pattern <data>_<sequencerID>_<runNumber>_<flowcellID>. This should be the output run folder from the sequencing machine".
+    if not re.match("\d{6}_\w+_\d{4}_\w+",os.path.basename(args.rawSequencingFolder.strip("/"))):
+        print "Raw sequencing folder doesn't match the pattern <data>_<sequencerID>_<runNumber>_<flowcellID>. This should be the output run folder from the sequencing machine."
         sys.exit()
         #a better way migth be to do os.listdir() and search for interop, runparameters and sample sheet. Can do this case insensitive then?
     #check the interop folder exists
-    elif not os.path.isdir("/".join([args.rawSequencingFolder,"InterOp"])):
+    if not os.path.isdir("/".join([args.rawSequencingFolder,"InterOp"])):
         print "InterOp folder not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( "/".join([args.rawSequencingFolder,"InterOp"]), args.machineType )
         sys.exit(1)
-    #check run parameters exists
-    elif not os.path.exists("/".join([args.rawSequencingFolder, "runParameters.xml"])) and args.machineType.lower() == "hiseq":
-        print "runParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
-        print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
-        sys.exit(1)
-    elif not os.path.exists("/".join([args.rawSequencingFolder,"RunParameters.xml"])) and args.machineType.lower() == "nextseq":
-        print "RunParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
-        print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
-        sys.exit(1)
     #samplesheet existence check
-    elif not os.path.exists("/".join([args.rawSequencingFolder, "SampleSheet.csv"])) and not os.path.exists("/".join([args.rawSequencingFolder,"sampleSheet.csv"])):
+    if not os.path.exists("/".join([args.rawSequencingFolder, "SampleSheet.csv"])) and not os.path.exists("/".join([args.rawSequencingFolder,"sampleSheet.csv"])):
         print "SampleSheet.csv not found at %s. Please have the Sample Sheet for the run present in the from-sequencer folder (named SampleSheet.csv)." 
         sys.exit(1)
     
@@ -1725,7 +1829,7 @@ if __name__ == "__main__":
 
 
     #print (args.runLocation, args.rawLocation, args.qCFolder, args.machineType, args.checkUndet )
-    addNextSeqRun( args.parsedRunFolder, args.rawSequencingFolder, args.QCFolder, machineType=args.machineType, checkUndetIndicies=args.checkUndet )
+    addSeqRun( args.parsedRunFolder, args.rawSequencingFolder, args.QCFolder, machineType=args.machineType, checkUndetIndicies=args.checkUndet )
     
 
 

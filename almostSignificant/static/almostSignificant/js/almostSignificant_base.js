@@ -215,12 +215,9 @@
     
         //magical ajax call
         var urlString = "Ajax/";
-        console.log("1");
-        console.log(run_name);
         $.ajax({
             "url": urlString,
             "success": function(json) {
-                console.log("success");
                 table["aoColumns"] = json.aoColumns;
                 /* replace col6 data with appropriate icons*/ 
                 table["aoColumns"][0]["mData"] = processPrivateFlag;
@@ -538,7 +535,6 @@ function processPrivateFlag( source, type, val ) {
         //This is for the sample drop down in /gsuStats/projects/
         $(".openIcon",window.mainTableElement).live('click', function () {
             /* toggle icon */
-            console.log("open")
             $(this).toggleClass('openIcon closeIcon');
             //$(this).removeClass('openIcon').addClass('closeIcon');
             $(this).rotate({animateTo:180});
@@ -554,7 +550,6 @@ function processPrivateFlag( source, type, val ) {
         
         $(".closeIcon",window.mainTableElement).live('click', function () {
             /* toggle icon */
-            console.log("close")
             $(this).toggleClass('openIcon closeIcon');
            // $(this).removeClass('closeIcon').addClass('openIcon');
             $(this).rotate({animateTo:0});
@@ -879,11 +874,9 @@ function processPrivateFlag( source, type, val ) {
                 dataType:"json",
                 success: function(data)
                     {
-                        console.log(data)
                         $(thisLoadingTD).html(data["htmlTabs"]);
                         $(thisLoadingTD).tabs();
                         $(thisLoadingTD).tabs('option', 'active', 0);
-                        console.log(data["htmlTabs"]);
                     },
                 complete: function(data)
                     {
@@ -898,17 +891,12 @@ function processPrivateFlag( source, type, val ) {
                         densityScatterGraph(json["densityStats"],divIDdensityPlot,
                                 "Cluster Density k/mm2","Number of Reads in the Lane");
                         divID="#laneReadsDist" + rowData["DT_RowId"] + "tab-div";
-                        console.log("q30")
-                        console.log(json["laneQ30"]) 
                         divIDdensityPlot="#laneQ30" + rowData["DT_RowId"] + "tab-div";
                         densityScatterGraph(json["laneQ30"],divIDdensityPlot,
                                 "Cluster Density k/mm2","Mean Q30 Length for the Lane");
                         divID="#laneReadsDist" + rowData["DT_RowId"] + "tab-div";
-                        console.log("q30End")
                         //first base report
                         if(rowData["DT_RowId"].indexOf("MiSeq") < 0) {
-                            console.log("fbr")
-                            console.log(json["firstBase"]) 
                             divIDfbrPlot="#firstBase" + rowData["DT_RowId"] + "tab-div";
                             densityScatterGraph(json["firstBase"],divIDfbrPlot,
                                     "Cluster Density k/mm2","First Base Report Cluster Density");
