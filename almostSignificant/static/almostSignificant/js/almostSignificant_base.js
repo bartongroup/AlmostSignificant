@@ -317,6 +317,7 @@ function processPrivateFlag( source, type, val ) {
                         $(thisLoadingTD).html(data["htmlTabs"]);
                         $(thisLoadingTD).tabs();
                         $(thisLoadingTD).tabs('option', 'active', 0);
+                        stackedBarchart(data["contamData"], "#contam"+rowData["DT_RowId"]+"plot")
                     },
 /*                complete: function()
                     {

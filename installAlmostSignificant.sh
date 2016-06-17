@@ -77,7 +77,7 @@ django-admin startproject ASServer | tee -a $installLog
 #THIS
 #settings
 	#installed apps
-	sed -i "/INSTALLED_APPS = \[/a \ \ \ \ 'almostSignificant'," ASServer/ASServer/settings.py
+	sed -i "/INSTALLED_APPS = [\(\[]/a \ \ \ \ 'almostSignificant'," ASServer/ASServer/settings.py
 	#static root
 	mkdir $currentDir/ASServer/ASServer/static/
 	echo "STATIC_ROOT = '$currentDir/ASServer/ASServer/static/'" >> ASServer/ASServer/settings.py
@@ -87,7 +87,7 @@ django-admin startproject ASServer | tee -a $installLog
 	#media url
 	echo "MEDIA_URL = '/media/'" >> ASServer/ASServer/settings.py
 	#templates
-	sed -i "/'context_processors': \[/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 'django.core.context_processors.static'," ASServer/ASServer/settings.py
+	sed -i "/'context_processors': [\[\(]/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 'django.core.context_processors.static'," ASServer/ASServer/settings.py
 	
 #urls
 	#imports

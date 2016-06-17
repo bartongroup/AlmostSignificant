@@ -1777,7 +1777,7 @@ if __name__ == "__main__":
         elif not os.path.exists("/".join([args.rawSequencingFolder, "runParameters.xml"])):
             print "runParameters.xml not found at %s. The raw sequencing folder should be the output folder that comes directly from the %s machine" %( args.rawSequencingFolder, args.machineType )
             print "This issue can be cause if the wrong --machineType is set. (defaults to nextseq)."
-        sys.exit(1)
+            sys.exit(1)
 
     elif args.machineType.lower() == "nextseq":
         if not os.path.exists("/".join([args.parsedRunFolder,"Undetermined_S0_L001_R1_001.fastq.gz"])) and args.checkUndet:

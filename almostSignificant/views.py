@@ -727,14 +727,16 @@ def sampleAjax(request, sample_id):
     #tab for the more technical details
     techDetails = buildTechDetails(sampleData)
     #tab for the contaminants image
-    contaminantsImage = buildContaminantsImage(sampleData)
-    contaminantsTable = buildContaminantsTable(sampleData)
+    #contaminantsImage = buildContaminantsImage(sampleData)
+    contaminantsImage = '<div id="contam%splot" class="contamplot"></div>' %( sampleData.id )
+    contaminantsTable, contamData = buildContaminantsTable(sampleData)
     #tab for the fastQC summary pdf
     fQCDetails = buildFastQCDetails(sampleData)
     # build the json to return
     data = {}
     data["htmlTabs"] = buildTabsHTML(sample_id, sampleDetails, techDetails, \
                                     contaminantsImage, contaminantsTable, fQCDetails)
+    data["contamData"] = contamData
     return HttpResponse(json.dumps(data), 'application/json')
     
 
@@ -878,6 +880,8 @@ def buildContaminantsTable(sampleData):
     Called by sampleAjax.
 
     """
+    #contamData for d3 plotting
+    contamData = {}
     #make the strings
     name_str = '<h1>Sample: %s (%s)</h1>' \
                   % (sampleData.sampleName, sampleData.sampleReference)
@@ -905,6 +909,11 @@ def buildContaminantsTable(sampleData):
                               curOrganism.manyHitOneLib, curOrganism.oneHitManyLib, \
                               curOrganism.manyHitManyLib) 
             rightTable = rightTable + currentLine
+            #data
+            contamData[curOrganism.organism] = [ curOrganism.oneHitOneLib, \
+                              curOrganism.manyHitOneLib, curOrganism.oneHitManyLib, \
+                              curOrganism.manyHitManyLib]
+            rightTable = rightTable + currentLine
     except:
         rightTable = rightTable + '<h1>Contaminants Details</h1><br><p>Hits no library: %s%%</p>' \
                             % "-" 
@@ -919,7 +928,7 @@ def buildContaminantsTable(sampleData):
     returnString = '<div class="dsetsummary">%s</div>' \
                       '' % rightTable 
                     #  '<div class="dsetprocessing">%s</div>' \
-    return(returnString)
+    return(returnString, contamData)
 
 def buildFastQCDetails(sampleData):
     """Builds the html to embed the fastQC summary pdf.

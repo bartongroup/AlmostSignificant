@@ -2,22 +2,22 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
     /* Plot barcharts given the provided labels and values.
      * Takes the array of labels and array of values as first two arguements.
      * Next arguement is the ID of the div which the barcode is to be inserted into
-     * Final two arguements are the input height and width (optional). 
+     * Final two arguements are the input height and width (optional).
      * */
 
-    var margin = {top: 30, right: 0, bottom: 0, left: 200};           
+    var margin = {top: 30, right: 0, bottom: 0, left: 200};
     var width = inputWidth || 1000 - margin.left - margin.right;
     var height= inputHeight || 300-margin.top -margin.bottom;
     //if there are a lot of samples, make the image bigger
     //unless a size is manually specified
-    if (height/valueArray.length < 20) 
+    if (height/valueArray.length < 20)
     {
         height= inputHeight || (20*valueArray.length)-margin.top -margin.bottom;
-    } 
+    }
 
     var selectedColor = inputColor || "teal";
 
-    //set the y scale for the labels given the input index.    
+    //set the y scale for the labels given the input index.
     var yScale = d3.scale.ordinal()
         .domain(labelArray.map(function(d) {return d;}))
         .rangeRoundBands([margin.top, height], 0.05);
@@ -35,12 +35,12 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
     var xScale = d3.scale.linear()
         .domain([0, d3.max(valueArray, function(d) {return parseFloat(d); })])
         .range([margin.left,width])
-    
+
     //...and initilise the x axis
     var xAxis = d3.svg.axis().scale(xScale).orient("top");
 
-    var tooltipDiv = d3.select(divID).append("div")   
-        .attr("class", "tooltip")               
+    var tooltipDiv = d3.select(divID).append("div")
+        .attr("class", "tooltip")
         .style("opacity", 0);
 
     //Create SVG element
@@ -73,21 +73,21 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
         //.attr("title",function(d,i){ return labelArray[i];})
         .each("end",function(d)
             {
-            d3.select(this) 
-            .on("mouseover", function(d) { 
+            d3.select(this)
+            .on("mouseover", function(d) {
                 d3.select(this).style("fill", "mediumSeaGreen");
-                tooltipDiv.transition()        
-                    .duration(200)      
-                    .style("opacity", .9);      
-                tooltipDiv .html(d + "M")  
-                    .style("left", (d3.event.pageX) + "px")     
-                    .style("top", (d3.event.pageY-1.5*height) + "px");    
+                tooltipDiv.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltipDiv .html(d + "M")
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY-1.5*height) + "px");
             })
             .on("mouseout", function(d){
                 d3.select(this).style("fill", selectedColor);
-                tooltipDiv.transition()        
-                    .duration(500)      
-                    .style("opacity", 0); 
+                tooltipDiv.transition()
+                    .duration(500)
+                    .style("opacity", 0);
             })
             .on("mousedown", function(d){
                 if (Math.random() < 0.93)
@@ -97,7 +97,7 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
                         .ease("bounce")
                         .duration(2000*Math.random())
                         .attr("width", function(d) { return d/2; })
-                        .each("end", function(d) 
+                        .each("end", function(d)
                         {
                         d3.select(this)
                             .transition()
@@ -107,7 +107,7 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
                             .attr("width", function(d) { return xScale(d)-margin.left;});
                         });
                     }
-                else 
+                else
                     {
                     d3.select(this)
                         .transition()
@@ -121,7 +121,7 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
             });
 
 
-   
+
     //add the y axis to the graph
     svg.append("g")
         .attr("class", "y axis")
@@ -142,66 +142,78 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
 
 }
 
-function stackedBarchart(labelArray, valueArray, value2Array, divID, inputHeight, inputWidth, inputColor) {
-    /* Plot barcharts given the provided labels and values. Splits the bar into two, 
+function stackedBarchart(jsonInput, divID, inputHeight, inputWidth) {
+    /* Plot barcharts given the provided labels and values. Splits the bar into two,
      * each being the entry from valueArray and value2Array.
      * Takes the array of labels and array of values as first two arguements.
      * Next arguement is the ID of the div which the barcode is to be inserted into
-     * Final two arguements are the input height and width (optional). 
+     * Final two arguements are the input height and width (optional).
      * */
-
-    var margin = {top: 30, right: 0, bottom: 0, left: 150};           
+    var margin = {top: 30, right: 0, bottom: 0, left: 150};
     var width = inputWidth || 1000 - margin.left - margin.right;
-    var height= inputHeight || 300-margin.top -margin.bottom;
+    var height= inputHeight || 400-margin.top -margin.bottom;
     //if there are a lot of samples, make the image bigger
     //unless a size is manually specified
-    if (height/valueArray.length < 20) 
+    if (height/jsonInput.length < 20)
     {
-        height= inputHeight || (20*valueArray.length)-margin.top -margin.bottom;
-    } 
+        height= inputHeight || (20*jsonInput.length)-margin.top -margin.bottom;
+    };
 
-    var selectedColor = inputColor || "teal";
+    //extract all of the data
+    var oneHitOneLib = [];
+    var manyHitOneLib = [];
+    var oneHitManyLib = [];
+    var manyHitManyLib = [];
 
-    var summedArray = [];
-    for (var i=0; i<valueArray.length; i++) 
-        {
-        summedArray[i] = parseFloat(valueArray[i])+parseFloat(value2Array[i]);
-        }
-    //set the y scale for the labels given the input index.    
+    var organisms = Object.keys(jsonInput);
+    for (var i = 0; i < organisms.length; i+=1) {
+        currentData = jsonInput[organisms[i]];
+        oneHitOneLib[i] = currentData[0];
+        manyHitOneLib[i] = currentData[1];
+        oneHitManyLib[i] = currentData[2];
+        manyHitManyLib[i] = currentData[3];
+    }
+    var oneHitOneLibColor = "lightBlue";
+    var manyHitOneLibColor = "blue";
+    var oneHitManyLibColor = "red";
+    var manyHitManyLibColor = "darkRed";
+    //set the y scale for the labels given the input index.
     var yScale = d3.scale.ordinal()
-        .domain(labelArray.map(function(d) {return d;}))
+        .domain(organisms.map(function(d) {return d;}))
         .rangeRoundBands([margin.top, height], 0.05);
 
     //set the y scale for the AXIS.
     //Needs to be different to the labels otherwise the lables break.
     var yAxisScale = d3.scale.ordinal()
-        .domain(labelArray.map(function(d) {return d;}))
+        .domain(organisms.map(function(d) {return d;}))
         .rangeRoundBands([margin.top, height], 0.05);
-
     //initialise the y axis
     var yAxis = d3.svg.axis().scale(yAxisScale).orient("left");
 
     //setup the x scale for the data.
+    //using 0-100 in domain as this is the range the contaminants are in (a %)
     var xScale = d3.scale.linear()
-        .domain([0, d3.max(summedArray, function(d) {return parseFloat(d); })])
+        .domain([0, 100])
         //.domain([0, d3.max(valueArray, function(d) {return parseFloat(d); })])
-        .range([margin.left,width])
-    
+        .range([margin.left,width-20])
+
     //...and initilise the x axis
     var xAxis = d3.svg.axis().scale(xScale).orient("top");
-
     //Create SVG element
     var svg = d3.select(divID)
         .append("svg")
         .attr("width", width)
         .attr("height", height);
 
-    var tooltipDiv = d3.select(divID).append("div")   
-        .attr("class", "tooltip")               
-        .style("opacity", 0);
+     //add the tooltip area to the webpage
+     var tooltip = d3.select("body").append("div")
+         .attr("class", "tooltip")
+         .style("opacity", 0); //needs to be 0, as this plonks a box on the web page ready to use as tooltip
+    
     //Create bars
-    svg.selectAll("rect")
-        .data(valueArray)
+    //oneHitOneLib
+    svg.selectAll("rect1")
+        .data(oneHitOneLib)
     .enter().append("rect")
         .attr("y", function(d, i) {
             return yScale(i); //note using the index so it works for repeat values
@@ -213,58 +225,125 @@ function stackedBarchart(labelArray, valueArray, value2Array, divID, inputHeight
         .attr("width", function(d,i) {
             return xScale(d)-margin.left; //scale the width, leaving space for the labels
         })
-       .attr("fill", selectedColor) //prettify
+       .attr("fill", oneHitOneLibColor) //prettify
         .text(function(d,i){ return d;})
         .attr("title",function(d){ return d;})
-        .on("mouseover", function(d) { 
+        .on("mouseover", function(d,i) {
             d3.select(this).style("fill", "mediumSeaGreen");
-            tooltipDiv.transition()        
-                .duration(200)      
-                .style("opacity", .9);      
-            tooltipDiv .html(d)  
-                .style("left", (d3.event.pageX) + "px")     
-                .style("top", (d3.event.pageY-1.5*height) + "px");    
+            tooltip.transition()
+            .duration(200)
+            .style("opacity", 100);
+            tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur only once, only in " + organisms[i] + ". <br/>")
+            .style("left", (d3.event.pageX + 15) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
            })
         .on("mouseout", function(d){
-            d3.select(this).style("fill", selectedColor);
-            tooltipDiv.transition()        
-                .duration(500)      
-                .style("opacity", 0); 
-       })
+            d3.select(this).style("fill", oneHitOneLibColor);
+            tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+       });
+       //oneHitManyLib
        svg.selectAll("rect2")
-            .data(value2Array)
+            .data(manyHitOneLib)
             .enter()
             .append("rect")
             .attr("y", function(d, i) {
                 return yScale(i); //note using the index so it works for repeat values
             })
             .attr("x", function(d,i) {
-                return xScale(valueArray[i])-1; //shift by the padding for the lables
+                return xScale(oneHitOneLib[i]); //shift by the padding for the lables
             })
             .attr("height", (yScale.rangeBand())) //scale the height
             .attr("width", function(d) {
                 return xScale(d)-margin.left; //scale the width, leaving space for the labels
             })
-            .attr("fill", "lightSeaGreen") //prettify
+            .attr("fill", manyHitOneLibColor) //prettify
             .text(function(d){ return d;})
             .attr("title",function(d){ return d;})
-            .on("mouseover", function(d) { 
+            .on("mouseover", function(d,i) {
                 d3.select(this).style("fill", "mediumSeaGreen");
-                tooltipDiv.transition()        
-                    .duration(200)      
-                    .style("opacity", .9);      
-                tooltipDiv .html(d)  
-                    .style("left", (d3.event.pageX) + "px")     
-                    .style("top", (d3.event.pageY-1.5*height) + "px");    
-               })
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 100);
+                tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur multiple times, only in " + organisms[i] + ". <br/>")
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+             })
             .on("mouseout", function(d){
-                d3.select(this).style("fill", "lightSeaGreen");
-                tooltipDiv.transition()        
-                    .duration(500)      
-                    .style("opacity", 0); 
-            });
+                d3.select(this).style("fill", manyHitOneLibColor);
+                tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
+       //manyHitOneLib
+       svg.selectAll("rect3")
+            .data(oneHitManyLib)
+            .enter()
+            .append("rect")
+            .attr("y", function(d, i) {
+                return yScale(i); //note using the index so it works for repeat values
+            })
+            .attr("x", function(d,i) {
+                return xScale((oneHitOneLib[i]+manyHitOneLib[i])); //shift by the padding for the lables
+            })
+            .attr("height", (yScale.rangeBand())) //scale the height
+            .attr("width", function(d) {
+                return xScale(d)-margin.left; //scale the width, leaving space for the labels
+            })
+            .attr("fill", oneHitManyLibColor) //prettify
+            .text(function(d){ return d;})
+            .attr("title",function(d){ return d;})
+            .on("mouseover", function(d) {
+                d3.select(this).style("fill", "mediumSeaGreen");
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 100);
+                tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur once in multiple organisms."+"<br/>")
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+                           })
+            .on("mouseout", function(d){
+                d3.select(this).style("fill", oneHitManyLibColor);
+                tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+        });
+       //manyHitManyLib
+       svg.selectAll("rect3")
+            .data(manyHitManyLib)
+            .enter()
+            .append("rect")
+            .attr("y", function(d, i) {
+                return yScale(i); //note using the index so it works for repeat values
+            })
+            .attr("x", function(d,i) {
+                return xScale((oneHitOneLib[i]+manyHitOneLib[i]+oneHitManyLib[i])); //shift by the padding for the lables
+            })
+            .attr("height", (yScale.rangeBand())) //scale the height
+            .attr("width", function(d) {
+                return xScale(d)-margin.left; //scale the width, leaving space for the labels
+            })
+            .attr("fill", manyHitManyLibColor) //prettify
+            .text(function(d){ return d;})
+            .attr("title",function(d){ return d;})
+            .on("mouseover", function(d) {
+                d3.select(this).style("fill", "mediumSeaGreen");
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 100);
+                tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur multipletimes in multiple organisms."+"<br/>")
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+                           })
+            .on("mouseout", function(d){
+                d3.select(this).style("fill", manyHitManyLibColor);
+                tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+       });
 
-   
+
     //add the y axis to the graph
     svg.append("g")
         .attr("class", "y axis")
@@ -281,31 +360,31 @@ function stackedBarchart(labelArray, valueArray, value2Array, divID, inputHeight
         .attr("text-anchor", "start")
         .attr("x", margin.left)
         .attr("dy", ".75em")
-        .text("Millions of Reads");
+        .text("Percentage of Reads");
 
 }
 
 function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, inputWidth, inputColor) {
-    /* Plot barcharts given the provided labels and values. Append the value of the 
+    /* Plot barcharts given the provided labels and values. Append the value of the
      * number of reads and Gbases to the end of the plot.
      * Takes the array of labels and array of values as first two arguements.
      * Next arguement is the ID of the div which the barcode is to be inserted into
-     * Final two arguements are the input height and width (optional). 
+     * Final two arguements are the input height and width (optional).
      * */
 
-    var margin = {top: 30, right: 150, bottom: 0, left: 200};           
+    var margin = {top: 30, right: 150, bottom: 0, left: 200};
     var width = inputWidth || 1500 - margin.left - margin.right;
     var height= inputHeight || 300-margin.top -margin.bottom;
     //if there are a lot of samples, make the image bigger
     //unless a size is manually specified
-    if (height/readArray.length < 20) 
+    if (height/readArray.length < 20)
     {
         height= inputHeight || (20*readArray.length)-margin.top -margin.bottom;
-    } 
+    }
 
     var selectedColor = inputColor || "teal";
 
-    //set the y scale for the labels given the input index.    
+    //set the y scale for the labels given the input index.
     var yScale = d3.scale.ordinal()
         .domain(labelArray.map(function(d) {return d;}))
         .rangeRoundBands([margin.top, height], 0.05);
@@ -327,12 +406,12 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
     var xScale = d3.scale.linear()
         .domain([0, d3.max(readArray, function(d) {return parseFloat(d); })])
         .range([margin.left,width - margin.right])
-    
+
     //...and initilise the x axis
     var xAxis = d3.svg.axis().scale(xScale).orient("top");
 
-    var tooltipDiv = d3.select(divID).append("div")   
-        .attr("class", "tooltip")               
+    var tooltipDiv = d3.select(divID).append("div")
+        .attr("class", "tooltip")
         .style("opacity", 0);
 
     //Create SVG element
@@ -365,21 +444,21 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
         //.attr("title",function(d,i){ return labelArray[i];})
         .each("end",function(d,i)
             {
-            d3.select(this) 
-            .on("mouseover", function(d, i) { 
+            d3.select(this)
+            .on("mouseover", function(d, i) {
                 d3.select(this).style("fill", "mediumSeaGreen");
-                tooltipDiv.transition()        
-                    .duration(200)      
-                    .style("opacity", .9);      
-                tooltipDiv .html(d + "M")  
-                    .style("left", (d3.event.pageX) + "px")     
-                    .style("top", (d3.event.pageY-1.5*height) + "px");    
+                tooltipDiv.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltipDiv .html(d + "M")
+                    .style("left", (d3.event.pageX) + "px")
+                    .style("top", (d3.event.pageY-1.5*height) + "px");
             })
             .on("mouseout", function(d){
                 d3.select(this).style("fill", selectedColor);
-                tooltipDiv.transition()        
-                    .duration(500)      
-                    .style("opacity", 0); 
+                tooltipDiv.transition()
+                    .duration(500)
+                    .style("opacity", 0);
             })
             .on("mousedown", function(d){
                 if (Math.random() < 0.93)
@@ -389,7 +468,7 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
                         .ease("bounce")
                         .duration(2000*Math.random())
                         .attr("width", function(d) { return d/2; })
-                        .each("end", function(d) 
+                        .each("end", function(d)
                         {
                         d3.select(this)
                             .transition()
@@ -399,7 +478,7 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
                             .attr("width", function(d) { return xScale(d)-margin.left;});
                         });
                     }
-                else 
+                else
                     {
                     d3.select(this)
                         .transition()
@@ -420,12 +499,12 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
         .attr("x", function(d)
             {
             return width - margin.right;
-            }) 
+            })
         .attr("y", function(d, i)
             {
             return yLabelScale(i) + yScale.rangeBand()/2 ; //add half the bar height
             })
-        .text( function(d,i) 
+        .text( function(d,i)
             {
             return d + "M, " + baseArray[i] + "Gb";
             });
@@ -468,56 +547,56 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
 //        .attr("dy", ".75em")
 //        .text("Millions of Reads");
 //
- 
+
 function premadeHist(valueArray,divID) {
     // Generate an Irwin–Hall distribution of 10 random variables.
 //    var values = d3.range(1000).map(d3.random.irwinHall(10));
     // A formatter for counts.
     var formatCount = d3.format(",.0f");
-    
+
     var margin = {top: 10, right: 30, bottom: 30, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
-    
+
     var x = d3.scale.linear()
         .domain([0, d3.max(valueArray)])
         .range([0, width]);
-    
+
     // Generate a histogram using twenty uniformly-spaced bins.
     var data = d3.layout.histogram()
         .bins(x.ticks(20))
         (valueArray);
-    
+
     var y = d3.scale.linear()
         .domain([0, d3.max(data, function(d) { return d.y; })])
         .range([height, 0]);
-    
+
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom");
-    
+
     var yAxis = d3.svg.axis()
         .scale(y)
         .orient("left");
-    
+
     var svg = d3.select(divID).append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    
+
     var bar = svg.selectAll(".bar")
         .data(data)
         .enter().append("g")
         .attr("class", "bar")
         .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
-    
+
     bar.append("rect")
         .attr("x", 1)
         .attr("width", x(data[0].dx) - 1)
         .attr("height", function(d) { return height - y(d.y); })
         .attr("fill", "teal"); //prettify
-    
+
     bar.append("text")
         .attr("dy", ".75em")
         .attr("y", 6)
@@ -525,7 +604,7 @@ function premadeHist(valueArray,divID) {
         .attr("text-anchor", "middle")
         .text(function(d) { if ( formatCount(d.y) > 0 ) { return formatCount(d.y)}
                         else { return ""}  });
-    
+
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
@@ -577,7 +656,7 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
     var margin = {top: 10, right: 30, bottom: 30, left: 105},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
- 
+
     var x = d3.scale.linear()
        .domain([0, d3.max(xValues)])
        .range([margin.left, width - margin.right]);
@@ -591,11 +670,11 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
      var xAxis = d3.svg.axis()
         .scale(xAxisScale)
         .orient("bottom");
-    
+
     var yAxis = d3.svg.axis()
         .scale(y)
         .orient("left");
-    
+
     var svg = d3.select(divID)
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
@@ -638,16 +717,16 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
         .x1(function(d) {return x(d[0] + d[2]); })
         .y(function(d) {return y(d[1]); })
         .interpolate("linear");
-//    
+//
 //    var errorBarSVG = d3.select(divID).append("svg")
-//    
+//
 //    var errorBars = errorBarSVG.selectAll("path")
 //             .data(data);
-//    
+//
 //    errorBars.enter().append("path");
-//    
-//    errorBars.attr("d", function(d){return errorBarArea([d]);}) 
-//    //turn the data into a one-element array 
+//
+//    errorBars.attr("d", function(d){return errorBarArea([d]);})
+//    //turn the data into a one-element array
 //    //and pass it to the area function
 //          .attr("stroke", "red")
 //          .attr("stroke-width", 1.5);
@@ -655,7 +734,7 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
         .data(valueArray)
         .enter()
         .append("path")
-        .attr("d", function(d){return yErrorBarArea([d]);}) 
+        .attr("d", function(d){return yErrorBarArea([d]);})
         .attr("stroke", "red")
         .attr("stroke-width", 0.25);
 
@@ -663,7 +742,7 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
         .data(valueArray)
         .enter()
         .append("path")
-        .attr("d", function(d){return xErrorBarArea([d]);}) 
+        .attr("d", function(d){return xErrorBarArea([d]);})
         .attr("stroke", "blue")
         .attr("stroke-width", 0.125);
 
