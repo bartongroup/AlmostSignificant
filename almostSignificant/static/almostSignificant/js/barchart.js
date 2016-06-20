@@ -39,9 +39,13 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
     //...and initilise the x axis
     var xAxis = d3.svg.axis().scale(xScale).orient("top");
 
-    var tooltipDiv = d3.select(divID).append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0);
+     var tooltipDiv = d3.select("body").append("div")
+         .attr("class", "tooltip")
+         .style("opacity", 0); //needs to be 0, as this plonks a box on the web page ready to use as tooltip
+    
+//    var tooltipDiv = d3.select(divID).append("div")
+//        .attr("class", "tooltip")
+//        .style("opacity", 0);
 
     //Create SVG element
     var svg = d3.select(divID)
@@ -80,8 +84,8 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
                     .duration(200)
                     .style("opacity", .9);
                 tooltipDiv .html(d + "M")
-                    .style("left", (d3.event.pageX) + "px")
-                    .style("top", (d3.event.pageY-1.5*height) + "px");
+                    .style("left", (d3.event.pageX + 15) + "px")
+                    .style("top", (d3.event.pageY - 28) + "px");
             })
             .on("mouseout", function(d){
                 d3.select(this).style("fill", selectedColor);
@@ -233,7 +237,7 @@ function stackedBarchart(jsonInput, divID, inputHeight, inputWidth) {
             tooltip.transition()
             .duration(200)
             .style("opacity", 100);
-            tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur only once, only in " + organisms[i] + ". <br/>")
+            tooltip.html(d3.format(",.0f")(d) + "% of reads occur only once, only in " + organisms[i])
             .style("left", (d3.event.pageX + 15) + "px")
             .style("top", (d3.event.pageY - 28) + "px");
            })
@@ -266,7 +270,7 @@ function stackedBarchart(jsonInput, divID, inputHeight, inputWidth) {
                 tooltip.transition()
                 .duration(200)
                 .style("opacity", 100);
-                tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur multiple times, only in " + organisms[i] + ". <br/>")
+                tooltip.html(d3.format(",.0f")(d) + "% of reads occur multiple times, only in " + organisms[i])
                 .style("left", (d3.event.pageX + 15) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
              })
@@ -299,7 +303,7 @@ function stackedBarchart(jsonInput, divID, inputHeight, inputWidth) {
                 tooltip.transition()
                 .duration(200)
                 .style("opacity", 100);
-                tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur once in multiple organisms."+"<br/>")
+                tooltip.html(d3.format(",.0f")(d) + "% of reads occur once in multiple organisms.")
                 .style("left", (d3.event.pageX + 15) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
                            })
@@ -332,7 +336,7 @@ function stackedBarchart(jsonInput, divID, inputHeight, inputWidth) {
                 tooltip.transition()
                 .duration(200)
                 .style("opacity", 100);
-                tooltip.html("<br/>" + d3.format(",.0f")(d) + "% of reads occur multipletimes in multiple organisms."+"<br/>")
+                tooltip.html(d3.format(",.0f")(d) + "% of reads occur multipletimes in multiple organisms.")
                 .style("left", (d3.event.pageX + 15) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
                            })
@@ -451,8 +455,8 @@ function numberedBarchart(labelArray, readArray, baseArray, divID, inputHeight, 
                     .duration(200)
                     .style("opacity", .9);
                 tooltipDiv .html(d + "M")
-                    .style("left", (d3.event.pageX) + "px")
-                    .style("top", (d3.event.pageY-1.5*height) + "px");
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
             })
             .on("mouseout", function(d){
                 d3.select(this).style("fill", selectedColor);
@@ -681,6 +685,10 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g");
 
+    var tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
     svg.selectAll("circle")
        .data(valueArray)
        .enter()
@@ -692,9 +700,36 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
             return y(d[1]);
        })
        .attr("r", 3)
-        .text( function(d) { return d[4]; })
-       .append("svg:title")
-       .text(function(d) { return d[4]; } );
+        .on("mouseover", function(d) {
+         d3.select(this).style("fill", "red");
+         tooltip.transition()
+             .duration(200)
+             .style("opacity", .9);
+         tooltip.html(d[4])
+             .style("left", (d3.event.pageX + 15) + "px")
+             .style("top", (d3.event.pageY - 28) + "px");
+	     })
+   		 .on("mouseout", function(d){
+         d3.select(this).style("fill", "black");
+         tooltip.transition()
+             .duration(500)
+             .style("opacity", 0);
+            });
+//.on("mouseover", function(d) {
+//            d3.select(this).style("fill", "red");
+//            tooltip.transition()
+//            .duration(200)
+//            .style("opacity", 100);
+//            tooltip.html("<br/>" + d[4] + ". <br/>")
+//            .style("left", (d3.event.pageX + 15) + "px")
+//            .style("top", (d3.event.pageY - 28) + "px");
+//           })
+//        .on("mouseout", function(d){
+//            d3.select(this).style("fill", "black");
+//            tooltip.transition()
+//            .duration(500)
+//            .style("opacity", 0);
+//		});
 
     svg.append("g")
         .attr("class", "x axis")
