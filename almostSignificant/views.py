@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib import auth
 from django.template import RequestContext
 from django.db.models import Q
+from django.core.urlresolvers import reverse
 from almostSignificant import *
 import os, re, json, itertools, numpy
 from django.utils.http import urlquote
@@ -908,7 +909,6 @@ def buildContaminantsTable(sampleData):
                            %( curOrganism.organism, curOrganism.oneHitOneLib, \
                               curOrganism.manyHitOneLib, curOrganism.oneHitManyLib, \
                               curOrganism.manyHitManyLib) 
-            rightTable = rightTable + currentLine
             #data
             contamData[curOrganism.organism] = [ curOrganism.oneHitOneLib, \
                               curOrganism.manyHitOneLib, curOrganism.oneHitManyLib, \
@@ -1246,7 +1246,7 @@ def ProjectDetailViewHTML(request, projectID):
                    <th>Insert Size</th></tr>'
     tableClose = "</table>"
     tableRowsHTML = header + tableStart + tableHeader
-    runDetail = sampleData[0]
+    runDetail = Run.objects.get(id=sampleData[0].run_id)
     #loop over all of the samples.
     for dataset in sampleData:
         tempDataArray = []
@@ -1256,7 +1256,7 @@ def ProjectDetailViewHTML(request, projectID):
         tempDataArray.append(dataset.sampleDescription)
         tempDataArray.append(dataset.sampleName)
         tempDataArray.append("SAM%s" % dataset.sampleReference)
-        tempDataArray.append( runDetail.runName)
+        tempDataArray.append( runDetail.run.runName)
         tempDataArray.append( str(runDetail.date))
         tempDataArray.append(dataset.lane.lane)
         tempDataArray.append(dataset.readNumber)
