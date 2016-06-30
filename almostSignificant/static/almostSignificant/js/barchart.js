@@ -67,7 +67,7 @@ function barchart(labelArray, valueArray, divID, inputHeight, inputWidth, inputC
         .attr("width",0)
         .transition()
         .ease("linear")
-        .duration(1000)
+        .duration(3000)
         .attr("width", function(d) {
 
             return xScale(d)-margin.left; //scale the width, leaving space for the labels
