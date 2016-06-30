@@ -669,14 +669,18 @@ function densityScatterGraph( valueArray, divID, xAxisLabel, yAxisLabel ) {
        .range([0, width - margin.right - margin.left]);
     var y = d3.scale.linear()
        .domain([0, d3.max(yValues)])
-       .range([height , margin.top]);
+       .range([height-margin.top , margin.top]);
+
+    var yAxisScale = d3.scale.linear()
+       .domain([0, d3.max(yValues)])
+       .range([height, margin.top]);
 
      var xAxis = d3.svg.axis()
         .scale(xAxisScale)
         .orient("bottom");
 
     var yAxis = d3.svg.axis()
-        .scale(y)
+        .scale(yAxisScale)
         .orient("left");
 
     var svg = d3.select(divID)
