@@ -87,7 +87,7 @@ django-admin startproject ASServer | tee -a $installLog
 	#media url
 	echo "MEDIA_URL = '/media/'" >> ASServer/ASServer/settings.py
 	#templates
-	sed -i "/'context_processors': [\[\(]/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 'django.core.context_processors.static'," ASServer/ASServer/settings.py
+	sed -i "/'context_processors': [\[\(]/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 'django.template.context_processors.static'," ASServer/ASServer/settings.py
 	
 #urls
 	#imports

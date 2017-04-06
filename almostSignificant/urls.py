@@ -1,6 +1,6 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from almostSignificant import views
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', views.overview,name="run"),
     url(r'^run/(\d{6}_[^/]+)/$', views.runView, name="runView"),
     url(r'^run/(\d{6}_[^/]+)/Ajax/$', views.runAjax), 
@@ -32,4 +32,4 @@ urlpatterns = patterns('',
     url(r'^stats/(\w+)/Ajax/$', views.statisticsSummaryAjax),
     url(r'^stupidStats$', views.stupidStats), 
 
-)
+]

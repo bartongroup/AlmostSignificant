@@ -49,6 +49,6 @@ qcFolder is a folder containing all of the fastQC and/or fastQScreen output for 
 Tip: If you don't normally keep all of the QC output in a single folder (subfolders within this folder are permitted), try hard or soft linking the files into a single folder.
 
 Optional arguements:
-`-m, --machineType` takes either hiseq or nextseq. By default assumes runs are nextseq runs.
+`-m, --machineType` takes either hiseq, miseq or nextseq. By default assumes runs are nextseq runs.
 `-c, --checkUndets` signifies that the script is to check what indexes are in the undetermined index files. 
 

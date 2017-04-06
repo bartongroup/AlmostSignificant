@@ -45,14 +45,21 @@ def overview(request):
         Gbases += curGbases 
         numberOfReads += reads
     #return the page with the details we just generated
-    return render_to_response('almostSignificant_mainpage.html',
+    #context_instance deprecated in 1.8, removed in 1.10
+    #return render_to_response('almostSignificant_mainpage.html',
+    #                            {"v":0.001,"detailsName":"Run Overview",\
+    #                            "runs":str(numberOfRuns), \
+    #                            "samples":str(numberOfSamples),\
+    #                            "numberOfReads":"%.2f" % (numberOfReads/1000000.0),\
+    #                            "Gbases":"%.2f" % (Gbases/1000000000.0)},
+    #                            context_instance=RequestContext(request)
+    #                         )
+    return render(request,'almostSignificant_mainpage.html',
                                 {"v":0.001,"detailsName":"Run Overview",\
                                 "runs":str(numberOfRuns), \
                                 "samples":str(numberOfSamples),\
                                 "numberOfReads":"%.2f" % (numberOfReads/1000000.0),\
-                                "Gbases":"%.2f" % (Gbases/1000000000.0)},
-                                context_instance=RequestContext(request)
-                             )
+                                "Gbases":"%.2f" % (Gbases/1000000000.0)})
 
 def runView(request, run_name):
     """Overview for a single run, displaying each sample in the run.
@@ -73,15 +80,13 @@ def runView(request, run_name):
         numberOfReads += reads[0]
     GBases = numberOfReads*runDetails.length
     #return the page with the details we just generated
-    return render_to_response('almostSignificant_runpage.html',
+    return render(request,'almostSignificant_runpage.html',
                                 {"detailsName":run_name,\
                                 "machine":runDetails.machine,\
                                 "machineType":runDetails.machineType,\
                                 "samples":numberOfSamples,\
                                 "numberOfReads":"%.2f" % (numberOfReads/1000000.0),\
-                                "Gbases":"%.2f" % (GBases/1000000000.0)},
-                                context_instance=RequestContext(request)
-                                )
+                                "Gbases":"%.2f" % (GBases/1000000000.0)} )
 
 def projectView(request):
     """Overview for all of the current projects.
@@ -112,14 +117,12 @@ def projectView(request):
         Gbases += curGbases 
         numberOfReads += reads
     #return the page with the details we just generated
-    return render_to_response('almostSignificant_projectmain.html',
+    return render(request, 'almostSignificant_projectmain.html',
                                 {"v":0.001,"detailsName":"Project Overview",\
                                 "projects":numberOfProjects,\
                                 "samples":str(numberOfSamples),\
                                 "numberOfReads":"%.2f" % (numberOfReads/1000000.0),\
-                                "Gbases":"%.2f" % (Gbases/1000000000.0)},
-                                 context_instance=RequestContext(request)
-                                )
+                                "Gbases":"%.2f" % (Gbases/1000000000.0)})
 
 def projectDetailView(request, project_name):
     """Overview for a specific project, detailing all the samples.
@@ -149,14 +152,12 @@ def projectDetailView(request, project_name):
         Gbases += curGbases 
         numberOfReads += reads
     #return the page with the details we just generated.
-    return render_to_response('almostSignificant_projectpage.html',
+    return render(request,'almostSignificant_projectpage.html',
                                 {"v":0.001,"detailsName":project_name,\
                                 "Owner":projectDetails.owner,\
                                 "samples":numberOfSamples,\
                                 "numberOfReads":"%.2f" % (numberOfReads/1000000.0),\
-                                "Gbases":"%.2f" % (Gbases/1000000000.0)},
-                                context_instance=RequestContext(request)
-                                )
+                                "Gbases":"%.2f" % (Gbases/1000000000.0)})
 
 
 def statistics(request):
@@ -170,11 +171,9 @@ def statistics(request):
     details = Run.objects.all()
     numberOfRuns = len(details)
     #return the page with the details we just generated
-    return render_to_response('almostSignificant_statistics.html',
+    return render(request,'almostSignificant_statistics.html',
                                 {"v":0.001,"detailsName":"General Overview",\
-                                "runs":str(numberOfRuns)}, \
-                                context_instance=RequestContext(request)
-                             )
+                                "runs":str(numberOfRuns)})
 
 def runNotesEntry(request, runName):
     """Page to allow editing of the notes entry for a run"""
