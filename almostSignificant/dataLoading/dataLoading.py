@@ -14,6 +14,8 @@ import fnmatch
 import subprocess
 import shutil
 import argparse
+sys.path.append('/home/jw279/Programs/AlmostSignificant-0.054/AlmostSignificantServer/almostSignificant/ASServer/ASServer/')
+sys.path.append('/home/jw279/Programs/AlmostSignificant-0.054/AlmostSignificantServer/almostSignificant/ASServer/')
 
 
 #load and import the models from django
@@ -842,89 +844,102 @@ def parseInterOp( runFolderLocation ):
         raise
    
 
+    tileMetricsOutputDict = {} # dictionary that is returned
     #Parse the interop files for the clusterDensity information.
     try:
         print "Loading InterOp data."
         interOpObject = InteropDataset( runFolderLocation )
+  
+
+        #Get the details of the first base report for the lane
+        #try:
+        #    firstBaseReport = parseFirstBaseReport( runFolderLocation )
+        #except IOError:
+        #    print "Cannot load first base report from %s" % runFolderLocation
+        #    raise
+
+        #get the tile metrics specifically
+        #try:
+        tileMetrics = interOpObject.TileMetrics()
+        #except:
+        #    print "failed loading tileMetrics from InterOp data"
+        #    raise Exception("failed loading interop data")
+        
+        #as it's done on a tile bases, gather the tiles into dicts
+        #keys are the lanes
+        densityDict = {}
+        densityPFDict = {}
+        numClustersDict = {}
+        numClustersPFDict = {}
+        #collect the set of lanes, means it scales with more or less lanes on a flowcell.
+        #*smug*
+        for lane in set(tileMetrics.data["lane"]):
+            densityDict[lane] = []
+            densityPFDict[lane] = []
+            numClustersDict[lane] = []
+            numClustersPFDict[lane] = []
+            #initialise the output dictionary.  Used later for looping
+            tileMetricsOutputDict[lane] = []
+        
+        #loop over the data
+        #code 100 is the cluster density, 1010 is the pass filter density
+        #102 is the number of clusters and 103 is the number of cluster passing filter
+        for index,value in enumerate(tileMetrics.data["lane"]):
+            #density
+            if tileMetrics.data["code"][index] == 100:
+                densityDict[value].append( tileMetrics.data["value"][index] )
+            #density passing filter
+            elif tileMetrics.data["code"][index] == 101:
+                densityPFDict[value].append( tileMetrics.data["value"][index] )
+            #number of clusters
+            elif tileMetrics.data["code"][index] == 102:
+                numClustersDict[value].append( tileMetrics.data["value"][index] )
+            #number of clusters passing filter
+            elif tileMetrics.data["code"][index] == 103:
+                numClustersPFDict[value].append( tileMetrics.data["value"][index] )
+        
+        #but we've only got the metrics for each tile, not the whole lane
+        #so we need to do...*DUN DUN DUUUUUUN* MATHS!
+        #loop over each of the lanes in the flow cell.
+        for lane in tileMetricsOutputDict:
+            
+            clusterDensity = int(round(mean(densityDict[int(lane)])/1000))
+            clusterDensityStdDev = int(round(std(densityDict[int(lane)])/1000))
+            clusterPFDensity = int(round(mean(densityPFDict[int(lane)])/1000))
+            clusterPFDensityStdDev = int(round(std(densityPFDict[int(lane)])/1000))
+            numClusters = int(round(mean(numClustersDict[int(lane)])/1000))
+            numClustersStdDev =  int(round(std(numClustersDict[int(lane)])/1000))
+            numClustersPF = int(round(mean(numClustersPFDict[int(lane)])/1000))
+            numClustersPFStdDev = int(round(std(numClustersPFDict[int(lane)])/1000))
+
+            laneDict = { \
+                    "clusterDensity":clusterDensity, \
+                    "clusterDensityStdDev":clusterDensityStdDev, \
+                    "clusterPFDensity":clusterPFDensity, \
+                    "clusterPFDensityStdDev":clusterPFDensityStdDev, \
+                    "numClusters":numClusters, \
+                    "numClustersStdDev":numClustersStdDev, \
+                    "numClustersPF":numClustersPF, \
+                    "numClustersPFStdDev":numClustersPFStdDev,\
+                    "firstBaseDensity":0 } #TODO
+            tileMetricsOutputDict[lane] = laneDict
+        #
     except:
         print "Cannot load InterOp data from %s" % runFolderLocation
-        raise
-   
-
-    #Get the details of the first base report for the lane
-    #try:
-    #    firstBaseReport = parseFirstBaseReport( runFolderLocation )
-    #except IOError:
-    #    print "Cannot load first base report from %s" % runFolderLocation
-    #    raise
-
-    #get the tile metrics specifically
-    try:
-        tileMetrics = interOpObject.TileMetrics()
-    except:
-        print "failed loading tileMetrics from InterOp data"
-        raise Exception("failed loading interop data")
-    
-    #as it's done on a tile bases, gather the tiles into dicts
-    #keys are the lanes
-    densityDict = {}
-    densityPFDict = {}
-    numClustersDict = {}
-    numClustersPFDict = {}
-    tileMetricsOutputDict = {} # dictionary that is returned
-    #collect the set of lanes, means it scales with more or less lanes on a flowcell.
-    #*smug*
-    for lane in set(tileMetrics.data["lane"]):
-        densityDict[lane] = []
-        densityPFDict[lane] = []
-        numClustersDict[lane] = []
-        numClustersPFDict[lane] = []
-        #initialise the output dictionary.  Used later for looping
-        tileMetricsOutputDict[lane] = []
-    
-    #loop over the data
-    #code 100 is the cluster density, 1010 is the pass filter density
-    #102 is the number of clusters and 103 is the number of cluster passing filter
-    for index,value in enumerate(tileMetrics.data["lane"]):
-        #density
-        if tileMetrics.data["code"][index] == 100:
-            densityDict[value].append( tileMetrics.data["value"][index] )
-        #density passing filter
-        elif tileMetrics.data["code"][index] == 101:
-            densityPFDict[value].append( tileMetrics.data["value"][index] )
-        #number of clusters
-        elif tileMetrics.data["code"][index] == 102:
-            numClustersDict[value].append( tileMetrics.data["value"][index] )
-        #number of clusters passing filter
-        elif tileMetrics.data["code"][index] == 103:
-            numClustersPFDict[value].append( tileMetrics.data["value"][index] )
-    
-    #but we've only got the metrics for each tile, not the whole lane
-    #so we need to do...*DUN DUN DUUUUUUN* MATHS!
-    #loop over each of the lanes in the flow cell.
-    for lane in tileMetricsOutputDict:
-        
-        clusterDensity = int(round(mean(densityDict[int(lane)])/1000))
-        clusterDensityStdDev = int(round(std(densityDict[int(lane)])/1000))
-        clusterPFDensity = int(round(mean(densityPFDict[int(lane)])/1000))
-        clusterPFDensityStdDev = int(round(std(densityPFDict[int(lane)])/1000))
-        numClusters = int(round(mean(numClustersDict[int(lane)])/1000))
-        numClustersStdDev =  int(round(std(numClustersDict[int(lane)])/1000))
-        numClustersPF = int(round(mean(numClustersPFDict[int(lane)])/1000))
-        numClustersPFStdDev = int(round(std(numClustersPFDict[int(lane)])/1000))
-
         laneDict = { \
-                "clusterDensity":clusterDensity, \
-                "clusterDensityStdDev":clusterDensityStdDev, \
-                "clusterPFDensity":clusterPFDensity, \
-                "clusterPFDensityStdDev":clusterPFDensityStdDev, \
-                "numClusters":numClusters, \
-                "numClustersStdDev":numClustersStdDev, \
-                "numClustersPF":numClustersPF, \
-                "numClustersPFStdDev":numClustersPFStdDev,\
-                "firstBaseDensity":0 } #TODO
-        tileMetricsOutputDict[lane] = laneDict
-    #
+                    "clusterDensity":0, \
+                    "clusterDensityStdDev":0, \
+                    "clusterPFDensity":0, \
+                    "clusterPFDensityStdDev":0, \
+                    "numClusters":0, \
+                    "numClustersStdDev":0, \
+                    "numClustersPF":0, \
+                    "numClustersPFStdDev":0,\
+                    "firstBaseDensity":0 } #TODO
+        tileMetricsOutputDict = {1:laneDict, 2:laneDict, 3:laneDict, 4:laneDict, \
+                                     5:laneDict, 6:laneDict, 7:laneDict, 8:laneDict}
+
+    #    raise
     #percPassingFilter = numClustersPF / numClusters * 100
 
     return tileMetricsOutputDict
@@ -1037,7 +1052,7 @@ def generateLatexFile( sampleName, destinationFolder, fastQCFolder, runName, q30
         #sys.exit(1)
         raise
 
-    latexFileName = "%s.pdf" % fastQCFolder.strip("_fastqc")
+    latexFileName = "%s.pdf" % fastQCFolder.strip("_fastqc.zip")
     return latexFileName
 
 
@@ -1294,30 +1309,40 @@ def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkU
 #   #Lane Parameters
     print "Adding Lane information."
     for lane, laneData in interOpData.iteritems():
-        thisLane = {"run_id":run_id, "lane":lane, \
-                            "ClusterPFDensity":laneData["clusterPFDensity"],\
-                            "percPassingFilter": (laneData["numClustersPF"] / laneData["numClusters"] * 100), \
-                            "readsPassingFilter":0,\
-                            "totalUndetIndexes":totalUndetsForRun[lane],\
-                            "percentOverQ30":0,\
-                            "numClusters":laneData["numClusters"],\
-                            "clusterDensity":laneData["clusterDensity"], \
-                            "clusterDensityStdDev":laneData["clusterDensityStdDev"],\
-                            "clusterPFDensity":laneData["clusterPFDensity"],\
-                            "clusterPFDensityStdDev":laneData["clusterPFDensityStdDev"],\
-                            "firstBaseDensity":laneData["firstBaseDensity"],\
-                            "numClustersStdDev": laneData["numClustersStdDev"],\
-                            "numClustersPF": laneData["numClustersPF"], \
-                            "numClustersPFStdDev": laneData["numClustersPFStdDev"]}
-        thisLane = addLaneToDatabase( thisLane )
-        interOpData[lane]["lane"] = thisLane
-        interOpData[lane]["lane_id"] = thisLane.id
-        #print lane,thisLaneID, run_id
-        #setup the undetermined indicies
-        if checkUndetIndicies == False:
-            addUndetIndicesToDatabase( undetIndiciesForRun[lane], interOpData[lane]["lane_id"] )
+        #if we set everything in interOpData to 0 (ie no interop data) make sure
+        #we stop the loop before we runout of actual lanes.
+        if int(lane) <= len(seqLanes):
+            #sanity check to avoid div by 0.
+            if laneData["numClusters"] != 0:
+                percPassFilter = (laneData["numClustersPF"] / laneData["numClusters"] * 100)
+            else:
+                percPassFilter = 0
+            thisLane = {"run_id":run_id, "lane":lane, \
+                                "ClusterPFDensity":laneData["clusterPFDensity"],\
+                                "percPassingFilter":percPassFilter, \
+                                "readsPassingFilter":0,\
+                                "totalUndetIndexes":totalUndetsForRun[lane],\
+                                "percentOverQ30":0,\
+                                "numClusters":laneData["numClusters"],\
+                                "clusterDensity":laneData["clusterDensity"], \
+                                "clusterDensityStdDev":laneData["clusterDensityStdDev"],\
+                                "clusterPFDensity":laneData["clusterPFDensity"],\
+                                "clusterPFDensityStdDev":laneData["clusterPFDensityStdDev"],\
+                                "firstBaseDensity":laneData["firstBaseDensity"],\
+                                "numClustersStdDev": laneData["numClustersStdDev"],\
+                                "numClustersPF": laneData["numClustersPF"], \
+                                "numClustersPFStdDev": laneData["numClustersPFStdDev"]}
+            thisLane = addLaneToDatabase( thisLane )
+            interOpData[lane]["lane"] = thisLane
+            interOpData[lane]["lane_id"] = thisLane.id
+            #print lane,thisLaneID, run_id
+            #setup the undetermined indicies
+            if checkUndetIndicies == False:
+                addUndetIndicesToDatabase( undetIndiciesForRun[lane], interOpData[lane]["lane_id"] )
+            else:
+                addUndetIndicesToDatabase( undetIndiciesForRun[lane], interOpData[lane]["lane_id"], forceUpdate=True )
         else:
-            addUndetIndicesToDatabase( undetIndiciesForRun[lane], interOpData[lane]["lane_id"], forceUpdate=True )
+            break
 
     ### Software ###
     #loop over currentSample software
@@ -1364,8 +1389,13 @@ def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkU
         #for each of the samples, gather the appropriate data
         sampleData["thisRun"] = thisRun #generated when we create the run in the db
         #either retrieve or generate the Project Stuff
+        #some samplesheets don't have investigator name
+        if "Investigator Name" in sampleSheetData["Header"]:
+            investigator = sampleSheetData["Header"]["Investigator Name"]
+        else:
+            investigator = "-"
         projectDetails = {"projectName":currentSample["Sample_Project"],\
-                                    "owner":sampleSheetData["Header"]["Investigator Name"],\
+                                    "owner":investigator, \
                                     "projectPROID":None,"projectMISOID":None,\
                                     "description":currentSample["Description"] }
         sampleData["thisProject"] = addProjectToDatabase( projectDetails )
@@ -1381,7 +1411,8 @@ def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkU
         elif machineType.lower() == "hiseq":
             projectFolder = "".join([runLocation, "Project_", currentSample["Sample_Project"]])
         elif machineType.lower() == "miseq":
-            projectFolder = "".join([runLocation, "Data/Intensities/BaseCalls/"])
+            #projectFolder = "".join([runLocation, "Data/Intensities/BaseCalls/"])
+            projectFolder = "".join([runLocation])#, "Data/Intensities/BaseCalls/"])
         #loop over every file in the folder
         #need to add to AS here as it deals with lanes and read number
         for root, dirs, fastqFiles in os.walk( projectFolder ):
@@ -1425,12 +1456,18 @@ def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkU
                                 parsedQC = parseFastQCData(fastQCSummaryObject=currentFastQCZip) 
                                 sampleData["reads"] = parsedQC["totalSequences"] #fastqc?
                                 sampleData["sequenceLength"] = parsedQC["sequenceLength"]#fastqc
-                                sampleData["filteredSequences"] = parsedQC["filteredSequences"]#fqc
+                                try:
+                                    sampleData["filteredSequences"] = parsedQC["filteredSequences"]#fqc
+                                except:
+                                    sampleData["filteredSequences"] = "0"#fqc
                                 sampleData["percentGC"] = parsedQC["percGC"]#fqc
                                 sampleData["sequenceQuality"] = parsedQC["passWarnFail"]["sequenceQuality"]#fqc
                                 sampleData["sequenceQualityScores"] = parsedQC["passWarnFail"]["sequenceQuality"]#fqc
                                 sampleData["sequenceContent"] = parsedQC["passWarnFail"]["sequenceGCContent"]#fqc
-                                sampleData["GCContent"] = parsedQC["passWarnFail"]["baseGCContent"]#fqc
+                                try:
+                                    sampleData["GCContent"] = parsedQC["passWarnFail"]["baseGCContent"]#fqc
+                                except:
+                                    sampleData["GCContent"] = "0"#fqc
                                 sampleData["baseNContent"] = parsedQC["passWarnFail"]["baseNContent"]#fqc
                                 sampleData["sequenceLengthDistribution"] = parsedQC["passWarnFail"]["lengthDistribution"]#fqc
                                 sampleData["sequenceDuplicationLevels"] = parsedQC["passWarnFail"]["duplicationLevels"]#fqc
@@ -1439,7 +1476,8 @@ def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkU
                                 sampleData["Q30Length"] = parsedQC["Q30Length"]
                                 sampleData["QCStatus"] = "Pending" #TODO
                                 
-                                fastQCFolder = "%s/%s" %( root, currentQCFile.strip(".zip") )
+                                fastQCFolder = "%s/%s" %( root, currentQCFile )
+                                #fastQCFolder = "%s/%s" %( root, currentQCFile.strip(".zip") )
                                 #uncomment
                                 #generate pdf file and then copy it to the media folder
                                 currentLatexFile = generateLatexFile( sampleData["sampleReference"], mediaFolder,\
@@ -1448,14 +1486,14 @@ def addSeqRun( runLocation, rawLocation, qCFolder, machineType="nextseq", checkU
                                 sampleData["fastQCLink"] = "%s/%s" %(runName, os.path.split(currentLatexFile)[-1]) #this is the pdf file.
 
 
-                            fastQScreenSummaryImageName = "%s_*_L00%s_R%s_*_screen.png" %(  \
+                            fastQScreenSummaryImageName = "%s_*_L00%s_R%s_*_screen.html" %(  \
                                                     sampleData["sampleReference"],\
                                                     sampleData["thisLane"],\
                                                     sampleData["readNumber"])
                        #    contaminants 
                             if fnmatch.fnmatch(currentQCFile, fastQScreenSummaryImageName):
                                 #generate the name for the data file
-                                fastQScreenSummaryDataName = currentQCFile.replace(".png",".txt")
+                                fastQScreenSummaryDataName = currentQCFile.replace(".html",".txt")
                                 #parse the fastqscreen summary
                                 sampleData["contaminantsLink"] = "%s/%s" %( runName, currentQCFile )#search?
                                 fastQScreenSummary = parseFastQScreenSummary( "%s/%s" %( root, fastQScreenSummaryDataName  ) )
@@ -1619,6 +1657,7 @@ def addSampleToDatabase( sampleData, software_object_array ):
         generated by addSoftwareToDatabase) to link with the sample
     """
     try:
+        print "sampleLoading"
         thisSample, created = Sample.objects.get_or_create(sampleReference=sampleData["sampleReference"],\
                                         sampleName=sampleData["sampleName"],\
                                         run_id=sampleData["thisRun"].id,\
@@ -1711,6 +1750,7 @@ def addContaminantsDetailsToDatabase( contaminantsSummary, sample_id ):
     """Takes the input from parseFastQScreenSummary (dict of data) and adds all of the relevant 
         data to the database"""    
 
+    print contaminantsSummary
     #add the contaminants details to the database
     for organism, contaminantValues in contaminantsSummary.iteritems():
 

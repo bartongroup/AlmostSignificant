@@ -147,19 +147,20 @@ function generateLatexFiles {
 	    echo '\end{document}' >> $latexFile
 
         #running  
-	    if [ -e $latexPrefix.tex ]; then
+	    if [ -e $latexFile ]; then
+	    	echo "pdflatex --shell-escape --file-line-error --interaction=batchmode --output-directory $latexOutFolder $latexPrefix.tex &> /dev/null "
 	    	pdflatex --shell-escape --file-line-error --interaction=batchmode --output-directory $latexOutFolder $latexPrefix.tex &> /dev/null 
 	    else
 	    	echo "Latex Prefix $latexPrefix.tex not found"
 	    fi
-	    #latex tidyup
-	    rm $latexPrefix.tex 
-	    rm $latexPrefix.aux 
-	    rm $latexPrefix.log
-        if [[ -e $TMPDIR/genPDF ]]; then
-            #echo "Cleaned up temporary folder $TMPDIR/genPDF/"
-            rm -r $TMPDIR/genPDF 
-        fi
+	    ##latex tidyup
+	    #rm $latexPrefix.tex 
+	    #rm $latexPrefix.aux 
+	    #rm $latexPrefix.log
+        #if [[ -e $TMPDIR/genPDF ]]; then
+        #    #echo "Cleaned up temporary folder $TMPDIR/genPDF/"
+        #    rm -r $TMPDIR/genPDF 
+        #fi
 
         return 0
     #if pdflatex isn't in path, errro
