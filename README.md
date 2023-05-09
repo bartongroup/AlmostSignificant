@@ -2,6 +2,28 @@
 AlmostSignificant
 =====
 
+WARNING
+----
+
+This distribution includes a legacy version of jquery that is known to have vulnerabilities.  The original developers are not in a position to update the code to patch this so if you wish to use AlmostSignificant please apply and test the patch before running the code.
+
+Dependency jquery
+
+Version >= 1.2.0 < 3.5.0
+
+Upgrade to ~> 3.5.0
+
+Defined in jquery-1.10.1.js
+
+Vulnerabilities
+
+CVE-2020-11022 Moderate severity
+CVE-2020-11022 Moderate severity
+CVE-2020-11022 Moderate severity
+
+Thank you.
+
+
 Getting Started
 ----
 DOWNLOAD AlmostSignificant.tar.gz to get started. 
