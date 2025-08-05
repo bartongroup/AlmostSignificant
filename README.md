@@ -5,7 +5,7 @@ AlmostSignificant
 WARNING
 ----
 
-This distribution includes a legacy version of jquery that is known to have vulnerabilities.  The original developers are not in a position to update the code to patch this so if you wish to use AlmostSignificant please apply and test the patch before running the code.
+This distribution includes a legacy version of jquery that is known to have vulnerabilities.  The original developers (Joe Ward and Chris Cole) are not in a position to update the code to patch this so if you wish to use AlmostSignificant please apply and test the patch before running the code.
 
 Dependency jquery
 
